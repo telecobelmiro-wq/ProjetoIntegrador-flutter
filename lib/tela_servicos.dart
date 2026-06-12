@@ -1,115 +1,97 @@
 import 'package:flutter/material.dart';
-import 'main.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class TelaServicos extends StatelessWidget {
-  final dynamic idProfissional;
+class TelaServicos extends StatefulWidget {
+  final int profissionalId;
   final String nomeProfissional;
 
   const TelaServicos({
     super.key,
-    required this.idProfissional,
+    required this.profissionalId,
     required this.nomeProfissional,
   });
 
-  Future<List<dynamic>> _buscarServicos() async {
-    final dados = await supabase
-        .from('servicos')
-        .select()
-        .eq('profissional_id', idProfissional);
-    return dados;
+  @override
+  State<TelaServicos> createState() => _TelaServicosState();
+}
+
+class _TelaServicosState extends State<TelaServicos> {
+  List servicos = [];
+  bool carregando = true;
+
+  Future<void> carregarServicos() async {
+    try {
+      final dados = await Supabase.instance.client
+          .from('servicos')
+          .select()
+          .eq('profissional_id', widget.profissionalId);
+
+      setState(() {
+        servicos = dados;
+        carregando = false;
+      });
+    } catch (e) {
+      debugPrint(e.toString());
+
+      setState(() {
+        carregando = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    carregarServicos();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Serviços'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Serviços de $nomeProfissional:',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 15),
-            Expanded(
-              child: FutureBuilder<List<dynamic>>(
-                future: _buscarServicos(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError ||
-                      !snapshot.hasData ||
-                      snapshot.data!.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Nenhum serviço encontrado para este profissional.',
+      appBar: AppBar(title: const Text("Serviços")),
+      body: carregando
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: servicos.length,
+              itemBuilder: (context, index) {
+                final servico = servicos[index];
+
+                return Card(
+                  margin: const EdgeInsets.all(10),
+                  elevation: 3,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+
+                    title: Text(
+                      servico['nome'],
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                    );
-                  }
+                    ),
 
-                  final listaServicos = snapshot.data!;
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
 
-                  return ListView.builder(
-                    itemCount: listaServicos.length,
-                    itemBuilder: (context, index) {
-                      final servico = listaServicos[index];
-                      return Card(
-                        elevation: 2,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                servico['nome'].toString(),
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Duração: ${servico['duracao']}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              Text(
-                                'Valor: R\$ ${servico['valor']}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+                        Text("Duração: ${servico['duracao']}"),
+
+                        Text("Valor: R\$ ${servico['valor']}"),
+                      ],
+                    ),
+
+                    trailing: const Icon(Icons.arrow_forward_ios),
+
+                    onTap: () {
+                      print("Serviço selecionado: ${servico['nome']}");
+
+                      // próxima tela
                     },
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
-      ),
     );
   }
 }

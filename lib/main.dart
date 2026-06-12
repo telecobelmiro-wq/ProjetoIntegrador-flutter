@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tela_login.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
@@ -10,19 +10,14 @@ void main() async {
     anonKey: 'sb_publishable_yzT4gY1wEOUinmBQMALn_A_gMs8Q9oU',
   );
 
-  runApp(const MeuAplicativo());
+  runApp(const MeuApp());
 }
 
-final supabase = Supabase.instance.client;
-
-class MeuAplicativo extends StatelessWidget {
-  const MeuAplicativo({super.key});
+class MeuApp extends StatelessWidget {
+  const MeuApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const TelaLogin(),
-    );
+    return MaterialApp(debugShowCheckedModeBanner: false, home: TelaLogin());
   }
 }
