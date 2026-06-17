@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'tela_horarios.dart';
 
 class TelaServicos extends StatefulWidget {
   final int profissionalId;
@@ -26,13 +27,14 @@ class _TelaServicosState extends State<TelaServicos> {
           .select()
           .eq('profissional_id', widget.profissionalId);
 
+      if (!mounted) return;
       setState(() {
         servicos = dados;
         carregando = false;
       });
     } catch (e) {
       debugPrint(e.toString());
-
+      if (!mounted) return;
       setState(() {
         carregando = false;
       });
@@ -48,50 +50,77 @@ class _TelaServicosState extends State<TelaServicos> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Serviços")),
-      body: carregando
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: servicos.length,
-              itemBuilder: (context, index) {
-                final servico = servicos[index];
+      appBar: AppBar(title: Text(widget.nomeProfissional)),
+      body: RefreshIndicator.adaptive(
+        onRefresh: carregarServicos,
+        child: SizedBox.expand(
+          child: carregando
+              ? const Center(child: CircularProgressIndicator())
+              : servicos.isEmpty
+              ? const Center(child: Text("Nenhum servico cadastrado"))
+              : Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: ListView.builder(
+                      itemCount: servicos.length,
+                      itemBuilder: (context, index) {
+                        final servico = servicos[index];
 
-                return Card(
-                  margin: const EdgeInsets.all(10),
-                  elevation: 3,
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
-
-                    title: Text(
-                      servico['nome'],
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TelaHorarios(
+                                  profissionalId: widget.profissionalId,
+                                  servicoId: servico['id'],
+                                  servicoNome: servico['nome'].toString(),
+                                  duracao: servico['duracao']?.toString() ?? '',
+                                ),
+                              ),
+                            );
+                          },
+                          child: Card(
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(16),
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                foregroundColor: Colors.white,
+                                child: const Icon(Icons.design_services),
+                              ),
+                              title: Text(
+                                servico['nome'].toString(),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Duracao: ${servico['duracao'] ?? '-'}",
+                                    ),
+                                    Text(
+                                      "Valor: R\$ ${servico['valor'] ?? '-'}",
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              trailing: const Icon(Icons.arrow_forward_ios),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-
-                        Text("Duração: ${servico['duracao']}"),
-
-                        Text("Valor: R\$ ${servico['valor']}"),
-                      ],
-                    ),
-
-                    trailing: const Icon(Icons.arrow_forward_ios),
-
-                    onTap: () {
-                      print("Serviço selecionado: ${servico['nome']}");
-
-                      // próxima tela
-                    },
                   ),
-                );
-              },
-            ),
+                ),
+        ),
+      ),
     );
   }
 }

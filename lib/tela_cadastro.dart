@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'tela_cadastro.dart';
-import 'tela_principal.dart';
 
-class TelaLogin extends StatefulWidget {
-  const TelaLogin({super.key});
+class TelaCadastro extends StatefulWidget {
+  const TelaCadastro({super.key});
 
   @override
-  State<TelaLogin> createState() => _TelaLoginState();
+  State<TelaCadastro> createState() => _TelaCadastroState();
 }
 
-class _TelaLoginState extends State<TelaLogin> {
+class _TelaCadastroState extends State<TelaCadastro> {
   final formKey = GlobalKey<FormState>();
   final usuarioController = TextEditingController();
   final senhaController = TextEditingController();
   bool carregando = false;
   bool obscureText = true;
 
-  Future<void> fazerLogin() async {
+  Future<void> cadastrarUsuario() async {
     if (!formKey.currentState!.validate()) {
       return;
     }
@@ -27,39 +25,26 @@ class _TelaLoginState extends State<TelaLogin> {
     });
 
     try {
-      final data = await Supabase.instance.client
-          .from('usuario')
-          .select()
-          .eq('nome', usuarioController.text.trim())
-          .eq('senha', senhaController.text.trim())
-          .maybeSingle();
+      await Supabase.instance.client.from('usuario').insert({
+        'nome': usuarioController.text.trim(),
+        'senha': senhaController.text.trim(),
+      });
 
       if (!mounted) return;
 
-      if (data != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Usuario autenticado com sucesso"),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const TelaPrincipal()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Usuario ou senha incorretos"),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Usuario cadastrado com sucesso! Faca o login."),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Erro de conexao ou RLS: $e")));
+      ).showSnackBar(SnackBar(content: Text("Erro ao cadastrar: $e")));
     } finally {
       if (mounted) {
         setState(() {
@@ -79,11 +64,12 @@ class _TelaLoginState extends State<TelaLogin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text("Criar Conta")),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 300, maxWidth: 340),
+          constraints: const BoxConstraints(minWidth: 300, maxWidth: 500),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Form(
               key: formKey,
               child: Column(
@@ -91,21 +77,20 @@ class _TelaLoginState extends State<TelaLogin> {
                 spacing: 16,
                 children: [
                   Icon(
-                    Icons.content_cut,
-                    size: 56,
+                    Icons.person_add,
+                    size: 52,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   Text(
-                    "Barbearia",
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    "Novo Cadastro",
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF2B211E),
                     ),
                   ),
                   TextFormField(
                     controller: usuarioController,
                     decoration: const InputDecoration(
-                      labelText: "Usuario",
+                      labelText: "Nome de usuario",
                       prefixIcon: Icon(Icons.person),
                     ),
                     validator: (value) {
@@ -142,17 +127,9 @@ class _TelaLoginState extends State<TelaLogin> {
                   carregando
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
-                          onPressed: fazerLogin,
-                          child: const Text("Entrar"),
+                          onPressed: cadastrarUsuario,
+                          child: const Text("Salvar Cadastro"),
                         ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const TelaCadastro()),
-                      );
-                    },
-                    child: const Text("Cadastre-se"),
-                  ),
                 ],
               ),
             ),
