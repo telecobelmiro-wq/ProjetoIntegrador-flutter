@@ -1,3 +1,5 @@
+import 'dart:convert'; // 👈 Adicionado para converter a senha em bytes
+import 'package:crypto/crypto.dart'; // 👈 Adicionado para gerar o hash SHA-256
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -25,9 +27,17 @@ class _TelaCadastroState extends State<TelaCadastro> {
     });
 
     try {
+      // 1. Pega a senha limpa digitada pelo usuário
+      final senhaLimpa = senhaController.text.trim();
+
+      // 2. Transforma a senha em um Hash SHA-256 seguro antes de mandar pro banco
+      final bytesDaSenha = utf8.encode(senhaLimpa);
+      final senhaHash = sha256.convert(bytesDaSenha).toString();
+
+      // 3. Salva no banco enviando a variável 'senhaHash'
       await Supabase.instance.client.from('usuario').insert({
         'nome': usuarioController.text.trim(),
-        'senha': senhaController.text.trim(),
+        'senha': senhaHash, // 👈 Agora vai criptografado!
       });
 
       if (!mounted) return;

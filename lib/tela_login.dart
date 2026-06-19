@@ -1,3 +1,5 @@
+import 'dart:convert'; // 👈 ADICIONADO: Para converter a senha em bytes
+import 'package:crypto/crypto.dart'; // 👈 ADICIONADO: Para gerar o hash SHA-256
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tela_cadastro.dart';
@@ -28,11 +30,22 @@ class _TelaLoginState extends State<TelaLogin> {
     });
 
     try {
+      // 1. Pega a senha limpa digitada pelo usuário
+      final senhaLimpa = senhaController.text.trim();
+
+      // 2. Transforma no mesmo hash SHA-256 gerado no cadastro
+      final bytesDaSenha = utf8.encode(senhaLimpa);
+      final senhaHash = sha256.convert(bytesDaSenha).toString();
+
+      // 3. Faz o select comparando o nome e a senha criptografada (hash)
       final data = await Supabase.instance.client
           .from('usuario')
           .select()
           .eq('nome', usuarioController.text.trim())
-          .eq('senha', senhaController.text.trim())
+          .eq(
+            'senha',
+            senhaHash,
+          ) // 👈 Alterado para buscar pelo hash correspondente
           .maybeSingle();
 
       if (!mounted) return;
