@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tela_cadastro.dart';
+import 'tela_funcionario_principal.dart';
 import 'tela_principal.dart';
 
 class TelaLogin extends StatefulWidget {
@@ -37,6 +38,13 @@ class _TelaLoginState extends State<TelaLogin> {
       if (!mounted) return;
 
       if (data != null) {
+        final profissional = await Supabase.instance.client
+            .from('profissionais')
+            .select()
+            .eq('nome', data['nome']?.toString() ?? '')
+            .maybeSingle();
+
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Usuario autenticado com sucesso"),
@@ -45,7 +53,21 @@ class _TelaLoginState extends State<TelaLogin> {
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const TelaPrincipal()),
+          MaterialPageRoute(
+            builder: (_) {
+              if (profissional != null) {
+                return TelaFuncionarioPrincipal(
+                  profissionalId: profissional['id'],
+                  profissionalNome: profissional['nome']?.toString() ?? '',
+                );
+              }
+
+              return TelaPrincipal(
+                usuarioNome:
+                    data['nome']?.toString() ?? usuarioController.text.trim(),
+              );
+            },
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tela_profissional.dart';
 
 class TelaPrincipal extends StatefulWidget {
-  const TelaPrincipal({super.key});
+  final String usuarioNome;
+
+  const TelaPrincipal({super.key, required this.usuarioNome});
 
   @override
   State<TelaPrincipal> createState() => _TelaPrincipalState();
@@ -13,16 +15,26 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
   List agendamentos = [];
   bool carregando = true;
 
+  bool agendamentoPertenceAoUsuario(dynamic agendamento) {
+    final clienteNome = agendamento['cliente_nome']?.toString().trim();
+    final status = agendamento['status']?.toString().trim();
+    return clienteNome == widget.usuarioNome.trim() &&
+        status == 'Agendado' &&
+        agendamento['servico_id'] != null;
+  }
+
   Future<void> carregarAgendamentos() async {
     try {
       final dados = await Supabase.instance.client
           .from('agendamento')
           .select()
+          .eq('cliente_nome', widget.usuarioNome)
+          .eq('status', 'Agendado')
           .order('data_agendamento');
 
       if (!mounted) return;
       setState(() {
-        agendamentos = dados;
+        agendamentos = dados.where(agendamentoPertenceAoUsuario).toList();
         carregando = false;
       });
     } catch (e) {
@@ -132,26 +144,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
                               ),
                             ),
                     ),
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TelaProfissional(),
-                          ),
-                        ).then((_) => carregarAgendamentos());
-                      },
-                      child: Container(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        alignment: Alignment.center,
-                        height: MediaQuery.of(context).size.height * 0.1,
-                        width: double.infinity,
-                        child: const Text(
-                          "Agendar horario",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
         ),
@@ -161,7 +153,9 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const TelaProfissional()),
+            MaterialPageRoute(
+              builder: (_) => TelaProfissional(clienteNome: widget.usuarioNome),
+            ),
           ).then((_) => carregarAgendamentos());
         },
       ),

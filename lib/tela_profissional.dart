@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tela_servicos.dart';
 
 class TelaProfissional extends StatefulWidget {
-  const TelaProfissional({super.key});
+  final String clienteNome;
+
+  const TelaProfissional({super.key, required this.clienteNome});
 
   @override
   State<TelaProfissional> createState() => _TelaProfissionalState();
@@ -64,6 +66,7 @@ class _TelaProfissionalState extends State<TelaProfissional> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => TelaServicos(
+                                  clienteNome: widget.clienteNome,
                                   profissionalId: profissional['id'],
                                   nomeProfissional: profissional['nome']
                                       .toString(),

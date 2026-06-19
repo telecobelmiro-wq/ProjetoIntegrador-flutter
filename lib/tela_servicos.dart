@@ -3,11 +3,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tela_horarios.dart';
 
 class TelaServicos extends StatefulWidget {
+  final String clienteNome;
   final int profissionalId;
   final String nomeProfissional;
 
   const TelaServicos({
     super.key,
+    required this.clienteNome,
     required this.profissionalId,
     required this.nomeProfissional,
   });
@@ -72,7 +74,9 @@ class _TelaServicosState extends State<TelaServicos> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => TelaHorarios(
+                                  clienteNome: widget.clienteNome,
                                   profissionalId: widget.profissionalId,
+                                  nomeProfissional: widget.nomeProfissional,
                                   servicoId: servico['id'],
                                   servicoNome: servico['nome'].toString(),
                                   duracao: servico['duracao']?.toString() ?? '',
