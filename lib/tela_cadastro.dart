@@ -1,5 +1,5 @@
-import 'dart:convert'; // 👈 Adicionado para converter a senha em bytes
-import 'package:crypto/crypto.dart'; // 👈 Adicionado para gerar o hash SHA-256
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

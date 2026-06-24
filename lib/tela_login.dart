@@ -1,5 +1,5 @@
-import 'dart:convert'; // 👈 ADICIONADO: Para converter a senha em bytes
-import 'package:crypto/crypto.dart'; // 👈 ADICIONADO: Para gerar o hash SHA-256
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tela_cadastro.dart';
@@ -20,32 +20,63 @@ class _TelaLoginState extends State<TelaLogin> {
   bool carregando = false;
   bool obscureText = true;
 
-  Future<void> fazerLogin() async {
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
+  // ── Cores da identidade visual ──────────────────────────────────────────────
+  static const Color _bgBase = Color(0xFF111111);
+  static const Color _bgCard = Color(0xFF1A1A1A);
+  static const Color _gold = Color(0xFFC9A84C);
+  static const Color _goldSutil = Color(0x33C9A84C); // gold 20% opacidade
+  static const Color _cream = Color(0xFFF5F0E8);
+  static const Color _muted = Color(0xFF8C8C8C);
 
-    setState(() {
-      carregando = true;
-    });
+  // ── InputDecoration reutilizável ─────────────────────────────────────────────
+  InputDecoration _inputDecoration({
+    required String label,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: _muted, fontSize: 14),
+      prefixIcon: Icon(prefixIcon, color: _gold, size: 20),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: _bgCard,
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _goldSutil, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _gold, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE24B4A), width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE24B4A), width: 1.5),
+      ),
+    );
+  }
+
+  // ── Lógica de login (sem alterações) ────────────────────────────────────────
+  Future<void> fazerLogin() async {
+    if (!formKey.currentState!.validate()) return;
+
+    setState(() => carregando = true);
 
     try {
-      // 1. Pega a senha limpa digitada pelo usuário
       final senhaLimpa = senhaController.text.trim();
-
-      // 2. Transforma no mesmo hash SHA-256 gerado no cadastro
       final bytesDaSenha = utf8.encode(senhaLimpa);
       final senhaHash = sha256.convert(bytesDaSenha).toString();
 
-      // 3. Faz o select comparando o nome e a senha criptografada (hash)
       final data = await Supabase.instance.client
           .from('usuario')
           .select()
           .eq('nome', usuarioController.text.trim())
-          .eq(
-            'senha',
-            senhaHash,
-          ) // 👈 Alterado para buscar pelo hash correspondente
+          .eq('senha', senhaHash)
           .maybeSingle();
 
       if (!mounted) return;
@@ -58,12 +89,18 @@ class _TelaLoginState extends State<TelaLogin> {
             .maybeSingle();
 
         if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Usuario autenticado com sucesso"),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Usuário autenticado com sucesso'),
+            backgroundColor: const Color(0xFF3B6D11),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -74,7 +111,6 @@ class _TelaLoginState extends State<TelaLogin> {
                   profissionalNome: profissional['nome']?.toString() ?? '',
                 );
               }
-
               return TelaPrincipal(
                 usuarioNome:
                     data['nome']?.toString() ?? usuarioController.text.trim(),
@@ -84,23 +120,29 @@ class _TelaLoginState extends State<TelaLogin> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Usuario ou senha incorretos"),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Usuário ou senha incorretos'),
+            backgroundColor: const Color(0xFFA32D2D),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Erro de conexao ou RLS: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro de conexão: $e'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          carregando = false;
-        });
-      }
+      if (mounted) setState(() => carregando = false);
     }
   }
 
@@ -114,81 +156,161 @@ class _TelaLoginState extends State<TelaLogin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _bgBase,
       body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 300, maxWidth: 340),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                spacing: 16,
-                children: [
-                  Icon(
-                    Icons.content_cut,
-                    size: 56,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  Text(
-                    "Barbearia",
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF2B211E),
-                    ),
-                  ),
-                  TextFormField(
-                    controller: usuarioController,
-                    decoration: const InputDecoration(
-                      labelText: "Usuario",
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Campo obrigatorio!";
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: senhaController,
-                    obscureText: obscureText,
-                    decoration: InputDecoration(
-                      labelText: "Senha",
-                      prefixIcon: const Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            obscureText = !obscureText;
-                          });
-                        },
-                        icon: Icon(
-                          obscureText ? Icons.visibility : Icons.visibility_off,
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 300, maxWidth: 360),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── Logo ────────────────────────────────────────────────
+                    Center(
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: _gold, width: 1.5),
+                          color: _bgCard,
+                        ),
+                        child: const Icon(
+                          Icons.content_cut,
+                          size: 32,
+                          color: _gold,
                         ),
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Campo obrigatorio!";
-                      }
-                      return null;
-                    },
-                  ),
-                  carregando
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
-                          onPressed: fazerLogin,
-                          child: const Text("Entrar"),
+
+                    const SizedBox(height: 20),
+
+                    // ── Título ───────────────────────────────────────────────
+                    const Text(
+                      'Barbearia',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily:
+                            'PlayfairDisplay', // adicione no pubspec.yaml
+                        fontSize: 28,
+                        fontWeight: FontWeight.w600,
+                        color: _cream,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    const Text(
+                      'BEM-VINDO DE VOLTA',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: _muted,
+                        letterSpacing: 2.5,
+                      ),
+                    ),
+
+                    const SizedBox(height: 36),
+
+                    // ── Campo usuário ────────────────────────────────────────
+                    TextFormField(
+                      controller: usuarioController,
+                      style: const TextStyle(color: _cream, fontSize: 15),
+                      decoration: _inputDecoration(
+                        label: 'Usuário',
+                        prefixIcon: Icons.person_outline,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Campo obrigatório';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // ── Campo senha ──────────────────────────────────────────
+                    TextFormField(
+                      controller: senhaController,
+                      obscureText: obscureText,
+                      style: const TextStyle(color: _cream, fontSize: 15),
+                      decoration: _inputDecoration(
+                        label: 'Senha',
+                        prefixIcon: Icons.lock_outline,
+                        suffixIcon: IconButton(
+                          onPressed: () =>
+                              setState(() => obscureText = !obscureText),
+                          icon: Icon(
+                            obscureText
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: _muted,
+                            size: 20,
+                          ),
                         ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const TelaCadastro()),
-                      );
-                    },
-                    child: const Text("Cadastre-se"),
-                  ),
-                ],
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Campo obrigatório';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ── Botão entrar ─────────────────────────────────────────
+                    carregando
+                        ? const Center(
+                            child: CircularProgressIndicator(color: _gold),
+                          )
+                        : SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: fazerLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _gold,
+                                foregroundColor: const Color(0xFF1A1A1A),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              child: const Text('Entrar'),
+                            ),
+                          ),
+
+                    const SizedBox(height: 16),
+
+                    // ── Link cadastro ────────────────────────────────────────
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const TelaCadastro(),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: _gold,
+                        textStyle: const TextStyle(fontSize: 14),
+                      ),
+                      child: const Text('Ainda não tem conta? Cadastre-se'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
