@@ -3,14 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tela_confirmacao.dart';
 
-// ── Cores ────────────────────────────────────────────────────────────────────
-const Color _bgBase = Color(0xFF111111);
-const Color _bgCard = Color(0xFF1A1A1A);
-const Color _gold = Color(0xFFC9A84C);
-const Color _goldSutil = Color(0x33C9A84C);
-const Color _cream = Color(0xFFF5F0E8);
-const Color _muted = Color(0xFF8C8C8C);
-
 class TelaHorarios extends StatefulWidget {
   final String clienteNome;
   final int profissionalId;
@@ -39,7 +31,13 @@ class _TelaHorariosState extends State<TelaHorarios> {
   bool carregandoHorarios = false;
   String? mensagemHorarios;
 
-  // ── Lógica (sem alterações) ──────────────────────────────────────────────────
+  Color bgBase = Color(0xFF111111);
+  Color bgCard = Color(0xFF1A1A1A);
+  Color gold = Color(0xFFC9A84C);
+  Color goldSutil = Color(0x33C9A84C);
+  Color cream = Color(0xFFF5F0E8);
+  Color muted = Color(0xFF8C8C8C);
+
   String obterDiaSemana(DateTime data) {
     const dias = [
       'Segunda',
@@ -201,63 +199,6 @@ class _TelaHorariosState extends State<TelaHorarios> {
     }
   }
 
-  Future<void> selecionarData() async {
-    final data = await showDatePicker(
-      context: context,
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2030),
-      initialDate: dataSelecionada ?? DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: _gold,
-              onPrimary: Color(0xFF1A1A1A),
-              surface: _bgCard,
-              onSurface: _cream,
-            ),
-            dialogTheme: const DialogThemeData(backgroundColor: _bgCard),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (data != null) {
-      setState(() => dataSelecionada = data);
-      await carregarHorarios();
-    }
-  }
-
-  void abrirConfirmacao(String horario) {
-    if (dataSelecionada == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Selecione uma data primeiro'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-      return;
-    }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => TelaConfirmacao(
-          clienteNome: widget.clienteNome,
-          profissionalId: widget.profissionalId,
-          servicoId: widget.servicoId,
-          nomeProfissional: widget.nomeProfissional,
-          servicoNome: widget.servicoNome,
-          data: dataSelecionada!,
-          horario: horario,
-        ),
-      ),
-    );
-  }
-
   String get dataFormatada {
     final data = dataSelecionada;
     if (data == null) return 'Escolha uma data';
@@ -266,112 +207,156 @@ class _TelaHorariosState extends State<TelaHorarios> {
     return '$dia/$mes/${data.year}';
   }
 
-  // ── Card de seleção de data ──────────────────────────────────────────────────
-  Widget _buildDataCard() {
+  Widget buildDataCard() {
     return GestureDetector(
-      onTap: selecionarData,
+      onTap: () async {
+        final data = await showDatePicker(
+          context: context,
+          firstDate: DateTime.now(),
+          lastDate: DateTime(2030),
+          initialDate: dataSelecionada ?? DateTime.now(),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.dark(
+                  primary: gold,
+                  onPrimary: Color(0xFF1A1A1A),
+                  surface: bgCard,
+                  onSurface: cream,
+                ),
+                dialogTheme: DialogThemeData(backgroundColor: bgCard),
+              ),
+              child: child!,
+            );
+          },
+        );
+
+        if (data != null) {
+          setState(() => dataSelecionada = data);
+          await carregarHorarios();
+        }
+      },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: _bgCard,
+          color: bgCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: dataSelecionada != null ? _gold : _goldSutil,
+            color: dataSelecionada != null ? gold : goldSutil,
             width: dataSelecionada != null ? 1.5 : 1,
           ),
         ),
         child: Row(
+          spacing: 14,
           children: [
             Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: _gold, width: 1.5),
-                color: const Color(0xFF222222),
+                border: Border.all(color: gold, width: 1.5),
+                color: Color(0xFF222222),
               ),
-              child: const Icon(
-                Icons.calendar_month_outlined,
-                color: _gold,
-                size: 20,
-              ),
+              child: Icon(Icons.calendar_month_outlined, color: gold, size: 20),
             ),
-            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 3,
                 children: [
                   Text(
                     dataFormatada,
                     style: GoogleFonts.dmSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: dataSelecionada != null ? _cream : _muted,
+                      color: dataSelecionada != null ? cream : muted,
                     ),
                   ),
-                  const SizedBox(height: 3),
                   Text(
                     widget.servicoNome,
-                    style: GoogleFonts.dmSans(fontSize: 13, color: _muted),
+                    style: GoogleFonts.dmSans(fontSize: 13, color: muted),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.edit_calendar_outlined, color: _muted, size: 18),
+            Icon(Icons.edit_calendar_outlined, color: muted, size: 18),
           ],
         ),
       ),
     );
   }
 
-  // ── Card de horário ──────────────────────────────────────────────────────────
-  Widget _buildHorarioCard(String horario) {
+  Widget buildHorarioCard(String horario) {
     return GestureDetector(
-      onTap: () => abrirConfirmacao(horario),
+      onTap: () {
+        if (dataSelecionada == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Selecione uma data primeiro'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+          return;
+        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TelaConfirmacao(
+              clienteNome: widget.clienteNome,
+              profissionalId: widget.profissionalId,
+              servicoId: widget.servicoId,
+              nomeProfissional: widget.nomeProfissional,
+              servicoNome: widget.servicoNome,
+              data: dataSelecionada!,
+              horario: horario,
+            ),
+          ),
+        );
+      },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        margin: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: _bgCard,
+          color: bgCard,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _goldSutil, width: 1),
+          border: Border.all(color: goldSutil, width: 1),
         ),
         child: Row(
+          spacing: 14,
           children: [
             Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _goldSutil,
+                color: goldSutil,
               ),
-              child: const Icon(
-                Icons.access_time_outlined,
-                color: _gold,
-                size: 18,
-              ),
+              child: Icon(Icons.access_time_outlined, color: gold, size: 18),
             ),
-            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
                 children: [
                   Text(
                     horario,
                     style: GoogleFonts.dmSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: _cream,
+                      color: cream,
                     ),
                   ),
                   Text(
                     'Duração: ${widget.duracao}',
-                    style: GoogleFonts.dmSans(fontSize: 12, color: _muted),
+                    style: GoogleFonts.dmSans(fontSize: 12, color: muted),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: _muted, size: 14),
+            Icon(Icons.arrow_forward_ios, color: muted, size: 14),
           ],
         ),
       ),
@@ -381,55 +366,54 @@ class _TelaHorariosState extends State<TelaHorarios> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgBase,
+      backgroundColor: bgBase,
       appBar: AppBar(
-        backgroundColor: _bgBase,
+        backgroundColor: bgBase,
         elevation: 0,
-        iconTheme: const IconThemeData(color: _gold),
+        iconTheme: IconThemeData(color: gold),
         title: Text(
           widget.servicoNome,
           style: GoogleFonts.playfairDisplay(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: _cream,
+            color: cream,
           ),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(color: _goldSutil, thickness: 0.5, height: 0),
+          preferredSize: Size.fromHeight(1),
+          child: Divider(color: goldSutil, thickness: 0.5, height: 0),
         ),
       ),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
+          constraints: BoxConstraints(maxWidth: 520),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            padding: EdgeInsets.fromLTRB(16, 20, 16, 16),
             child: Column(
+              spacing: 20,
               children: [
-                _buildDataCard(),
-                const SizedBox(height: 20),
+                buildDataCard(),
 
-                // ── Seção de horários ──────────────────────────────────────
-                if (dataSelecionada != null) ...[
+                if (dataSelecionada != null)
                   Row(
+                    spacing: 8,
                     children: [
                       Text(
                         'Horários disponíveis',
                         style: GoogleFonts.dmSans(
                           fontSize: 13,
-                          color: _muted,
+                          color: muted,
                           letterSpacing: 0.5,
                         ),
                       ),
-                      const SizedBox(width: 8),
                       if (!carregandoHorarios && horarios.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: _goldSutil,
+                            color: goldSutil,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -437,38 +421,34 @@ class _TelaHorariosState extends State<TelaHorarios> {
                             style: GoogleFonts.dmSans(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: _gold,
+                              color: gold,
                             ),
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                ],
 
                 Expanded(
                   child: carregandoHorarios
-                      ? const Center(
-                          child: CircularProgressIndicator(color: _gold),
-                        )
+                      ? Center(child: CircularProgressIndicator(color: gold))
                       : horarios.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
+                            spacing: 16,
                             children: [
                               Icon(
                                 Icons.event_busy_outlined,
                                 size: 48,
-                                color: _muted.withValues(alpha: 0.4),
+                                color: muted.withValues(alpha: 0.4),
                               ),
-                              const SizedBox(height: 16),
                               Text(
                                 mensagemHorarios ??
                                     'Selecione uma data para ver os horários',
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.dmSans(
                                   fontSize: 14,
-                                  color: _muted,
+                                  color: muted,
                                 ),
                               ),
                             ],
@@ -477,7 +457,7 @@ class _TelaHorariosState extends State<TelaHorarios> {
                       : ListView.builder(
                           itemCount: horarios.length,
                           itemBuilder: (context, index) =>
-                              _buildHorarioCard(horarios[index]),
+                              buildHorarioCard(horarios[index]),
                         ),
                 ),
               ],

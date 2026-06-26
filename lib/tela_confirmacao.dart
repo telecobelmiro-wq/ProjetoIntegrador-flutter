@@ -29,100 +29,50 @@ class TelaConfirmacao extends StatefulWidget {
 class _TelaConfirmacaoState extends State<TelaConfirmacao> {
   bool salvando = false;
 
-  // ── Cores ────────────────────────────────────────────────────────────────────
-  static const Color _bgBase = Color(0xFF111111);
-  static const Color _bgCard = Color(0xFF1A1A1A);
-  static const Color _gold = Color(0xFFC9A84C);
-  static const Color _goldSutil = Color(0x33C9A84C);
-  static const Color _cream = Color(0xFFF5F0E8);
-  static const Color _muted = Color(0xFF8C8C8C);
+  Color bgBase = Color(0xFF111111);
+  Color bgCard = Color(0xFF1A1A1A);
+  Color gold = Color(0xFFC9A84C);
+  Color goldSutil = Color(0x33C9A84C);
+  Color cream = Color(0xFFF5F0E8);
+  Color muted = Color(0xFF8C8C8C);
 
-  // ── Lógica (sem alterações) ──────────────────────────────────────────────────
   String get dataParaSalvar {
-    final data = widget.data;
-    final ano = data.year.toString().padLeft(4, '0');
-    final mes = data.month.toString().padLeft(2, '0');
-    final dia = data.day.toString().padLeft(2, '0');
+    final d = widget.data;
+    final ano = d.year.toString().padLeft(4, '0');
+    final mes = d.month.toString().padLeft(2, '0');
+    final dia = d.day.toString().padLeft(2, '0');
     return '$ano-$mes-$dia';
   }
 
   String get dataFormatada {
-    final data = widget.data;
-    final dia = data.day.toString().padLeft(2, '0');
-    final mes = data.month.toString().padLeft(2, '0');
-    return '$dia/$mes/${data.year}';
+    final d = widget.data;
+    final dia = d.day.toString().padLeft(2, '0');
+    final mes = d.month.toString().padLeft(2, '0');
+    return '$dia/$mes/${d.year}';
   }
 
-  Future<void> confirmarAgendamento() async {
-    setState(() => salvando = true);
-
-    try {
-      await Supabase.instance.client.from('agendamento').insert({
-        'cliente_nome': widget.clienteNome,
-        'profissional_id': widget.profissionalId,
-        'servico_id': widget.servicoId,
-        'data_agendamento': dataParaSalvar,
-        'horario': widget.horario,
-        'status': 'Agendado',
-      });
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Agendamento criado com sucesso',
-            style: GoogleFonts.dmSans(color: _bgBase),
-          ),
-          backgroundColor: const Color(0xFF639922),
-        ),
-      );
-      Navigator.of(context).popUntil((route) => route.isFirst);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Erro ao salvar agendamento: $e',
-            style: GoogleFonts.dmSans(color: _cream),
-          ),
-          backgroundColor: const Color(0xFFE24B4A),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => salvando = false);
-    }
-  }
-
-  // ── Linha de detalhe ─────────────────────────────────────────────────────────
-  Widget _buildDetalhe({
-    required IconData icon,
-    required String label,
-    required String valor,
-  }) {
+  Widget buildDetalhe(IconData icon, String label, String valor) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           width: 36,
           height: 36,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: _goldSutil,
-          ),
-          child: Icon(icon, color: _gold, size: 17),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: goldSutil),
+          child: Icon(icon, color: gold, size: 17),
         ),
-        const SizedBox(width: 14),
+        SizedBox(width: 14),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: GoogleFonts.dmSans(fontSize: 11, color: _muted)),
-            const SizedBox(height: 2),
+            Text(label, style: GoogleFonts.dmSans(fontSize: 11, color: muted)),
+            SizedBox(height: 2),
             Text(
               valor.isEmpty ? '-' : valor,
               style: GoogleFonts.dmSans(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: _cream,
+                color: cream,
               ),
             ),
           ],
@@ -134,107 +84,86 @@ class _TelaConfirmacaoState extends State<TelaConfirmacao> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgBase,
-
-      // ── AppBar ───────────────────────────────────────────────────────────────
+      backgroundColor: bgBase,
       appBar: AppBar(
-        backgroundColor: _bgBase,
+        backgroundColor: bgBase,
         elevation: 0,
-        iconTheme: const IconThemeData(color: _gold),
+        iconTheme: IconThemeData(color: gold),
         title: Text(
           'Confirmação',
           style: GoogleFonts.playfairDisplay(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: _cream,
+            color: cream,
           ),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(color: _goldSutil, thickness: 0.5, height: 0),
+          preferredSize: Size.fromHeight(1),
+          child: Divider(color: goldSutil, thickness: 0.5, height: 0),
         ),
       ),
-
-      // ── Body ─────────────────────────────────────────────────────────────────
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 28, 16, 32),
+          padding: EdgeInsets.fromLTRB(16, 28, 16, 32),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
+            constraints: BoxConstraints(maxWidth: 420),
             child: Column(
+              spacing: 28,
               children: [
-                // ── Card de resumo ─────────────────────────────────────────
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: _bgCard,
+                    color: bgCard,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: _goldSutil, width: 1),
+                    border: Border.all(color: goldSutil, width: 1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 16,
                     children: [
                       Text(
                         'Resumo do agendamento',
                         style: GoogleFonts.playfairDisplay(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: _cream,
+                          color: cream,
                         ),
                       ),
-                      const SizedBox(height: 20),
-
-                      _buildDetalhe(
-                        icon: Icons.person_outline,
-                        label: 'Cliente',
-                        valor: widget.clienteNome,
+                      buildDetalhe(
+                        Icons.person_outline,
+                        'Cliente',
+                        widget.clienteNome,
                       ),
-                      const SizedBox(height: 16),
-                      Divider(color: _goldSutil, thickness: 0.5),
-                      const SizedBox(height: 16),
-
-                      _buildDetalhe(
-                        icon: Icons.content_cut_outlined,
-                        label: 'Profissional',
-                        valor: widget.nomeProfissional,
+                      Divider(color: goldSutil, thickness: 0.5),
+                      buildDetalhe(
+                        Icons.content_cut_outlined,
+                        'Profissional',
+                        widget.nomeProfissional,
                       ),
-                      const SizedBox(height: 16),
-                      Divider(color: _goldSutil, thickness: 0.5),
-                      const SizedBox(height: 16),
-
-                      _buildDetalhe(
-                        icon: Icons.design_services_outlined,
-                        label: 'Serviço',
-                        valor: widget.servicoNome,
+                      Divider(color: goldSutil, thickness: 0.5),
+                      buildDetalhe(
+                        Icons.design_services_outlined,
+                        'Serviço',
+                        widget.servicoNome,
                       ),
-                      const SizedBox(height: 16),
-                      Divider(color: _goldSutil, thickness: 0.5),
-                      const SizedBox(height: 16),
-
-                      _buildDetalhe(
-                        icon: Icons.calendar_today_outlined,
-                        label: 'Data',
-                        valor: dataFormatada,
+                      Divider(color: goldSutil, thickness: 0.5),
+                      buildDetalhe(
+                        Icons.calendar_today_outlined,
+                        'Data',
+                        dataFormatada,
                       ),
-                      const SizedBox(height: 16),
-                      Divider(color: _goldSutil, thickness: 0.5),
-                      const SizedBox(height: 16),
-
-                      _buildDetalhe(
-                        icon: Icons.access_time_outlined,
-                        label: 'Horário',
-                        valor: widget.horario,
+                      Divider(color: goldSutil, thickness: 0.5),
+                      buildDetalhe(
+                        Icons.access_time_outlined,
+                        'Horário',
+                        widget.horario,
                       ),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 28),
-
-                // ── Botões ─────────────────────────────────────────────────
                 Row(
+                  spacing: 12,
                   children: [
-                    // Cancelar
                     Expanded(
                       child: SizedBox(
                         height: 50,
@@ -243,11 +172,8 @@ class _TelaConfirmacaoState extends State<TelaConfirmacao> {
                               ? null
                               : () => Navigator.of(context).pop(),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: _gold,
-                            side: const BorderSide(
-                              color: Color(0x33C9A84C),
-                              width: 1,
-                            ),
+                            foregroundColor: gold,
+                            side: BorderSide(color: goldSutil, width: 1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -262,26 +188,72 @@ class _TelaConfirmacaoState extends State<TelaConfirmacao> {
                         ),
                       ),
                     ),
-
-                    const SizedBox(width: 12),
-
-                    // Confirmar
                     Expanded(
                       child: SizedBox(
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: salvando ? null : confirmarAgendamento,
+                          onPressed: salvando
+                              ? null
+                              : () async {
+                                  setState(() => salvando = true);
+
+                                  try {
+                                    await Supabase.instance.client
+                                        .from('agendamento')
+                                        .insert({
+                                          'cliente_nome': widget.clienteNome,
+                                          'profissional_id':
+                                              widget.profissionalId,
+                                          'servico_id': widget.servicoId,
+                                          'data_agendamento': dataParaSalvar,
+                                          'horario': widget.horario,
+                                          'status': 'Agendado',
+                                        });
+
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Agendamento criado com sucesso',
+                                          style: GoogleFonts.dmSans(
+                                            color: bgBase,
+                                          ),
+                                        ),
+                                        backgroundColor: Color(0xFF639922),
+                                      ),
+                                    );
+                                    Navigator.of(
+                                      context,
+                                    ).popUntil((route) => route.isFirst);
+                                  } catch (e) {
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Erro ao salvar agendamento: $e',
+                                          style: GoogleFonts.dmSans(
+                                            color: cream,
+                                          ),
+                                        ),
+                                        backgroundColor: Color(0xFFE24B4A),
+                                      ),
+                                    );
+                                  } finally {
+                                    if (mounted)
+                                      setState(() => salvando = false);
+                                  }
+                                },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _gold,
-                            foregroundColor: _bgBase,
-                            disabledBackgroundColor: _goldSutil,
+                            backgroundColor: gold,
+                            foregroundColor: bgBase,
+                            disabledBackgroundColor: goldSutil,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: salvando
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(

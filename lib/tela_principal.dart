@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tela_profissional.dart';
+import 'tela_login.dart';
 
 class TelaPrincipal extends StatefulWidget {
   final String usuarioNome;
@@ -16,7 +17,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
   List agendamentos = [];
   bool carregando = true;
 
-  // ── Cores ────────────────────────────────────────────────────────────────────
   static const Color _bgBase = Color(0xFF111111);
   static const Color _bgCard = Color(0xFF1A1A1A);
   static const Color _gold = Color(0xFFC9A84C);
@@ -24,7 +24,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
   static const Color _cream = Color(0xFFF5F0E8);
   static const Color _muted = Color(0xFF8C8C8C);
 
-  // ── Lógica (sem alterações) ──────────────────────────────────────────────────
   bool agendamentoPertenceAoUsuario(dynamic agendamento) {
     final clienteNome = agendamento['cliente_nome']?.toString().trim();
     final status = agendamento['status']?.toString().trim();
@@ -60,7 +59,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
     carregarAgendamentos();
   }
 
-  // ── Card de agendamento ──────────────────────────────────────────────────────
   Widget _buildAgendamentoCard(dynamic agendamento) {
     final data = agendamento['data_agendamento']?.toString() ?? '-';
     final horario = agendamento['horario']?.toString() ?? '-';
@@ -78,7 +76,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Ícone
             Container(
               width: 44,
               height: 44,
@@ -93,10 +90,7 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
                 size: 20,
               ),
             ),
-
             const SizedBox(width: 14),
-
-            // Conteúdo
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,7 +108,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
                   const SizedBox(height: 4),
                   _infoRow(Icons.access_time_outlined, horario),
                   const SizedBox(height: 8),
-                  // Badge de status
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -153,7 +146,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
     );
   }
 
-  // ── Drawer ───────────────────────────────────────────────────────────────────
   Widget _buildDrawer() {
     return Drawer(
       backgroundColor: _bgCard,
@@ -204,6 +196,33 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
                 style: GoogleFonts.dmSans(fontSize: 12, color: _muted),
               ),
             ),
+
+            // Empurra o botão sair para o fundo
+            const Spacer(),
+
+            Divider(
+              color: _goldSutil,
+              thickness: 0.5,
+              indent: 24,
+              endIndent: 24,
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: _gold, size: 20),
+              title: Text(
+                'Sair da conta',
+                style: GoogleFonts.dmSans(fontSize: 14, color: _cream),
+              ),
+              onTap: () async {
+                await Supabase.instance.client.auth.signOut();
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const TelaLogin()),
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -214,8 +233,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bgBase,
-
-      // ── AppBar ─────────────────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: _bgBase,
         elevation: 0,
@@ -233,10 +250,7 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
           child: Divider(color: _goldSutil, thickness: 0.5, height: 0),
         ),
       ),
-
       drawer: _buildDrawer(),
-
-      // ── Body ───────────────────────────────────────────────────────────────
       body: RefreshIndicator(
         color: _gold,
         backgroundColor: _bgCard,
@@ -278,8 +292,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
                 ),
         ),
       ),
-
-      // ── FAB ────────────────────────────────────────────────────────────────
       floatingActionButton: FloatingActionButton(
         backgroundColor: _gold,
         foregroundColor: const Color(0xFF1A1A1A),

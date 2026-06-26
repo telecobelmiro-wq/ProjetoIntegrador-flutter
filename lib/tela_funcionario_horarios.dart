@@ -17,15 +17,19 @@ class _TelaFuncionarioHorariosState extends State<TelaFuncionarioHorarios> {
   bool carregando = true;
   String? mensagem;
 
-  // ── Cores ────────────────────────────────────────────────────────────────────
-  static const Color _bgBase = Color(0xFF111111);
-  static const Color _bgCard = Color(0xFF1A1A1A);
-  static const Color _gold = Color(0xFFC9A84C);
-  static const Color _goldSutil = Color(0x33C9A84C);
-  static const Color _cream = Color(0xFFF5F0E8);
-  static const Color _muted = Color(0xFF8C8C8C);
+  Color bgBase = Color(0xFF111111);
+  Color bgCard = Color(0xFF1A1A1A);
+  Color gold = Color(0xFFC9A84C);
+  Color goldSutil = Color(0x33C9A84C);
+  Color cream = Color(0xFFF5F0E8);
+  Color muted = Color(0xFF8C8C8C);
 
-  // ── Lógica (sem alterações) ──────────────────────────────────────────────────
+  @override
+  void initState() {
+    super.initState();
+    carregarHorarios();
+  }
+
   Future<void> carregarHorarios() async {
     try {
       final dados = await Supabase.instance.client
@@ -55,37 +59,20 @@ class _TelaFuncionarioHorariosState extends State<TelaFuncionarioHorarios> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    carregarHorarios();
-  }
-
-  void abrirCadastro() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            TelaCadastroHorario(profissionalId: widget.profissionalId),
-      ),
-    ).then((_) => carregarHorarios());
-  }
-
-  // ── Card de horário ──────────────────────────────────────────────────────────
-  Widget _buildHorarioCard(dynamic horario) {
+  Widget buildHorarioCard(dynamic horario) {
     final dia = horario['dia_semana'] ?? horario['descricao'] ?? '-';
     final inicio = horario['horario_inicio']?.toString() ?? '-';
     final fim = horario['horario_fim']?.toString() ?? '-';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: _bgCard,
+        color: bgCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _goldSutil, width: 1),
+        border: Border.all(color: goldSutil, width: 1),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
@@ -93,40 +80,32 @@ class _TelaFuncionarioHorariosState extends State<TelaFuncionarioHorarios> {
               height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: _gold, width: 1.5),
-                color: const Color(0xFF222222),
+                border: Border.all(color: gold, width: 1.5),
+                color: Color(0xFF222222),
               ),
-              child: const Icon(
-                Icons.schedule_outlined,
-                color: _gold,
-                size: 20,
-              ),
+              child: Icon(Icons.schedule_outlined, color: gold, size: 20),
             ),
-            const SizedBox(width: 14),
+            SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 5,
                 children: [
                   Text(
                     dia.toString(),
                     style: GoogleFonts.dmSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: _cream,
+                      color: cream,
                     ),
                   ),
-                  const SizedBox(height: 5),
                   Row(
+                    spacing: 5,
                     children: [
-                      const Icon(
-                        Icons.access_time_outlined,
-                        size: 13,
-                        color: _muted,
-                      ),
-                      const SizedBox(width: 5),
+                      Icon(Icons.access_time_outlined, size: 13, color: muted),
                       Text(
                         '$inicio até $fim',
-                        style: GoogleFonts.dmSans(fontSize: 13, color: _muted),
+                        style: GoogleFonts.dmSans(fontSize: 13, color: muted),
                       ),
                     ],
                   ),
@@ -142,46 +121,48 @@ class _TelaFuncionarioHorariosState extends State<TelaFuncionarioHorarios> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgBase,
-
-      // ── AppBar ───────────────────────────────────────────────────────────────
+      backgroundColor: bgBase,
       appBar: AppBar(
-        backgroundColor: _bgBase,
+        backgroundColor: bgBase,
         elevation: 0,
-        iconTheme: const IconThemeData(color: _gold),
+        iconTheme: IconThemeData(color: gold),
         title: Text(
           'Horários',
           style: GoogleFonts.playfairDisplay(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: _cream,
+            color: cream,
           ),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(color: _goldSutil, thickness: 0.5, height: 0),
+          preferredSize: Size.fromHeight(1),
+          child: Divider(color: goldSutil, thickness: 0.5, height: 0),
         ),
       ),
-
-      // ── FAB ──────────────────────────────────────────────────────────────────
       floatingActionButton: FloatingActionButton(
-        onPressed: abrirCadastro,
-        backgroundColor: _gold,
-        foregroundColor: _bgBase,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  TelaCadastroHorario(profissionalId: widget.profissionalId),
+            ),
+          ).then((_) => carregarHorarios());
+        },
+        backgroundColor: gold,
+        foregroundColor: bgBase,
         elevation: 4,
-        child: const Icon(Icons.add),
+        child: Icon(Icons.add),
       ),
-
-      // ── Body ─────────────────────────────────────────────────────────────────
       body: RefreshIndicator(
-        color: _gold,
-        backgroundColor: _bgCard,
+        color: gold,
+        backgroundColor: bgCard,
         onRefresh: carregarHorarios,
         child: carregando
-            ? const Center(child: CircularProgressIndicator(color: _gold))
+            ? Center(child: CircularProgressIndicator(color: gold))
             : Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
+                  constraints: BoxConstraints(maxWidth: 520),
                   child: mensagem != null
                       ? ListView(
                           children: [
@@ -189,19 +170,19 @@ class _TelaFuncionarioHorariosState extends State<TelaFuncionarioHorarios> {
                               height: MediaQuery.of(context).size.height * 0.4,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
+                                spacing: 16,
                                 children: [
                                   Icon(
                                     Icons.warning_amber_outlined,
                                     size: 48,
-                                    color: _muted.withValues(alpha: 0.4),
+                                    color: muted.withValues(alpha: 0.4),
                                   ),
-                                  const SizedBox(height: 16),
                                   Text(
                                     mensagem!,
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.dmSans(
                                       fontSize: 14,
-                                      color: _muted,
+                                      color: muted,
                                     ),
                                   ),
                                 ],
@@ -216,18 +197,18 @@ class _TelaFuncionarioHorariosState extends State<TelaFuncionarioHorarios> {
                               height: MediaQuery.of(context).size.height * 0.4,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
+                                spacing: 16,
                                 children: [
                                   Icon(
                                     Icons.event_busy_outlined,
                                     size: 48,
-                                    color: _muted.withValues(alpha: 0.4),
+                                    color: muted.withValues(alpha: 0.4),
                                   ),
-                                  const SizedBox(height: 16),
                                   Text(
                                     'Nenhum horário cadastrado',
                                     style: GoogleFonts.dmSans(
                                       fontSize: 15,
-                                      color: _muted,
+                                      color: muted,
                                     ),
                                   ),
                                 ],
@@ -236,9 +217,9 @@ class _TelaFuncionarioHorariosState extends State<TelaFuncionarioHorarios> {
                           ],
                         )
                       : ListView(
-                          padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+                          padding: EdgeInsets.fromLTRB(16, 20, 16, 32),
                           children: horarios
-                              .map((h) => _buildHorarioCard(h))
+                              .map((h) => buildHorarioCard(h))
                               .toList(),
                         ),
                 ),
@@ -247,10 +228,6 @@ class _TelaFuncionarioHorariosState extends State<TelaFuncionarioHorarios> {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════════
-// Tela Cadastro Horário
-// ════════════════════════════════════════════════════════════════════════════════
 
 class TelaCadastroHorario extends StatefulWidget {
   final int profissionalId;
@@ -262,15 +239,14 @@ class TelaCadastroHorario extends StatefulWidget {
 }
 
 class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
-  // ── Cores ────────────────────────────────────────────────────────────────────
-  static const Color _bgBase = Color(0xFF111111);
-  static const Color _bgCard = Color(0xFF1A1A1A);
-  static const Color _gold = Color(0xFFC9A84C);
-  static const Color _goldSutil = Color(0x33C9A84C);
-  static const Color _cream = Color(0xFFF5F0E8);
-  static const Color _muted = Color(0xFF8C8C8C);
+  Color bgBase = Color(0xFF111111);
+  Color bgCard = Color(0xFF1A1A1A);
+  Color gold = Color(0xFFC9A84C);
+  Color goldSutil = Color(0x33C9A84C);
+  Color cream = Color(0xFFF5F0E8);
+  Color muted = Color(0xFF8C8C8C);
 
-  final dias = const [
+  final dias = [
     'Segunda',
     'Terça',
     'Quarta',
@@ -284,66 +260,6 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
   String diaSelecionado = 'Segunda';
   bool salvando = false;
 
-  // ── Lógica (sem alterações) ──────────────────────────────────────────────────
-  int? lerHora(String texto) {
-    return int.tryParse(texto.trim().split(':').first);
-  }
-
-  Future<void> salvarHorario() async {
-    final inicio = lerHora(inicioController.text);
-    final fim = lerHora(fimController.text);
-
-    if (inicio == null || fim == null || inicio >= fim) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Informe um intervalo válido',
-            style: GoogleFonts.dmSans(color: _cream),
-          ),
-          backgroundColor: const Color(0xFFE24B4A),
-        ),
-      );
-      return;
-    }
-
-    setState(() => salvando = true);
-
-    try {
-      await Supabase.instance.client.from('horarios_profissionais').insert({
-        'profissional_id': widget.profissionalId,
-        'dia_semana': diaSelecionado,
-        'descricao': diaSelecionado,
-        'horario_inicio': inicio,
-        'horario_fim': fim,
-      });
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Horário cadastrado',
-            style: GoogleFonts.dmSans(color: _bgBase),
-          ),
-          backgroundColor: const Color(0xFF639922),
-        ),
-      );
-      Navigator.of(context).pop();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Erro ao salvar horário: $e',
-            style: GoogleFonts.dmSans(color: _cream),
-          ),
-          backgroundColor: const Color(0xFFE24B4A),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => salvando = false);
-    }
-  }
-
   @override
   void dispose() {
     inicioController.dispose();
@@ -351,86 +267,82 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
     super.dispose();
   }
 
-  // ── Campo de texto estilizado ────────────────────────────────────────────────
-  InputDecoration _inputDecoration(String label, String hint) {
+  int? lerHora(String texto) {
+    return int.tryParse(texto.trim().split(':').first);
+  }
+
+  InputDecoration inputDecoration(String label, String hint) {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: GoogleFonts.dmSans(fontSize: 13, color: _muted),
-      hintStyle: GoogleFonts.dmSans(fontSize: 13, color: _muted),
+      labelStyle: GoogleFonts.dmSans(fontSize: 13, color: muted),
+      hintStyle: GoogleFonts.dmSans(fontSize: 13, color: muted),
       filled: true,
-      fillColor: const Color(0xFF222222),
+      fillColor: Color(0xFF222222),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0x33C9A84C), width: 1),
+        borderSide: BorderSide(color: Color(0x33C9A84C), width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _gold, width: 1.5),
+        borderSide: BorderSide(color: gold, width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgBase,
-
-      // ── AppBar ───────────────────────────────────────────────────────────────
+      backgroundColor: bgBase,
       appBar: AppBar(
-        backgroundColor: _bgBase,
+        backgroundColor: bgBase,
         elevation: 0,
-        iconTheme: const IconThemeData(color: _gold),
+        iconTheme: IconThemeData(color: gold),
         title: Text(
           'Novo horário',
           style: GoogleFonts.playfairDisplay(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: _cream,
+            color: cream,
           ),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(color: _goldSutil, thickness: 0.5, height: 0),
+          preferredSize: Size.fromHeight(1),
+          child: Divider(color: goldSutil, thickness: 0.5, height: 0),
         ),
       ),
-
-      // ── Body ─────────────────────────────────────────────────────────────────
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
+          constraints: BoxConstraints(maxWidth: 420),
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 28, 16, 32),
+            padding: EdgeInsets.fromLTRB(16, 28, 16, 32),
             children: [
-              // ── Card do formulário ─────────────────────────────────────────
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: _bgCard,
+                  color: bgCard,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _goldSutil, width: 1),
+                  border: Border.all(color: goldSutil, width: 1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 14,
                   children: [
                     Text(
                       'Informações do horário',
                       style: GoogleFonts.playfairDisplay(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: _cream,
+                        color: cream,
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Dropdown dia
                     DropdownButtonFormField<String>(
                       initialValue: diaSelecionado,
-                      dropdownColor: _bgCard,
-                      style: GoogleFonts.dmSans(fontSize: 14, color: _cream),
-                      iconEnabledColor: _gold,
-                      decoration: _inputDecoration('Dia da semana', ''),
+                      dropdownColor: bgCard,
+                      style: GoogleFonts.dmSans(fontSize: 14, color: cream),
+                      iconEnabledColor: gold,
+                      decoration: inputDecoration('Dia da semana', ''),
                       items: dias
                           .map(
                             (dia) =>
@@ -438,31 +350,24 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
                           )
                           .toList(),
                       onChanged: (value) {
-                        if (value != null) {
+                        if (value != null)
                           setState(() => diaSelecionado = value);
-                        }
                       },
                     ),
-                    const SizedBox(height: 14),
-
-                    // Horário inicial
                     TextFormField(
                       controller: inicioController,
                       keyboardType: TextInputType.number,
-                      style: GoogleFonts.dmSans(fontSize: 14, color: _cream),
-                      decoration: _inputDecoration(
+                      style: GoogleFonts.dmSans(fontSize: 14, color: cream),
+                      decoration: inputDecoration(
                         'Horário inicial',
                         'Ex: 9 ou 09:00',
                       ),
                     ),
-                    const SizedBox(height: 14),
-
-                    // Horário final
                     TextFormField(
                       controller: fimController,
                       keyboardType: TextInputType.number,
-                      style: GoogleFonts.dmSans(fontSize: 14, color: _cream),
-                      decoration: _inputDecoration(
+                      style: GoogleFonts.dmSans(fontSize: 14, color: cream),
+                      decoration: inputDecoration(
                         'Horário final',
                         'Ex: 18 ou 18:00',
                       ),
@@ -471,24 +376,80 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
-              // ── Botão salvar ───────────────────────────────────────────────
               SizedBox(
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: salvando ? null : salvarHorario,
+                  onPressed: salvando
+                      ? null
+                      : () async {
+                          final inicio = lerHora(inicioController.text);
+                          final fim = lerHora(fimController.text);
+
+                          if (inicio == null || fim == null || inicio >= fim) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Informe um intervalo válido',
+                                  style: GoogleFonts.dmSans(color: cream),
+                                ),
+                                backgroundColor: Color(0xFFE24B4A),
+                              ),
+                            );
+                            return;
+                          }
+
+                          setState(() => salvando = true);
+
+                          try {
+                            await Supabase.instance.client
+                                .from('horarios_profissionais')
+                                .insert({
+                                  'profissional_id': widget.profissionalId,
+                                  'dia_semana': diaSelecionado,
+                                  'descricao': diaSelecionado,
+                                  'horario_inicio': inicio,
+                                  'horario_fim': fim,
+                                });
+
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Horário cadastrado',
+                                  style: GoogleFonts.dmSans(color: bgBase),
+                                ),
+                                backgroundColor: Color(0xFF639922),
+                              ),
+                            );
+                            Navigator.of(context).pop();
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Erro ao salvar horário: $e',
+                                  style: GoogleFonts.dmSans(color: cream),
+                                ),
+                                backgroundColor: Color(0xFFE24B4A),
+                              ),
+                            );
+                          } finally {
+                            if (mounted) setState(() => salvando = false);
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _gold,
-                    foregroundColor: _bgBase,
-                    disabledBackgroundColor: _goldSutil,
+                    backgroundColor: gold,
+                    foregroundColor: bgBase,
+                    disabledBackgroundColor: goldSutil,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: salvando
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
@@ -506,9 +467,8 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
-              // ── Botão cancelar ─────────────────────────────────────────────
               SizedBox(
                 height: 50,
                 child: OutlinedButton(
@@ -516,8 +476,8 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
                       ? null
                       : () => Navigator.of(context).pop(),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: _gold,
-                    side: const BorderSide(color: Color(0x33C9A84C), width: 1),
+                    foregroundColor: gold,
+                    side: BorderSide(color: Color(0x33C9A84C), width: 1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

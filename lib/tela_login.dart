@@ -20,15 +20,13 @@ class _TelaLoginState extends State<TelaLogin> {
   bool carregando = false;
   bool obscureText = true;
 
-  // ── Cores da identidade visual ──────────────────────────────────────────────
   static const Color _bgBase = Color(0xFF111111);
   static const Color _bgCard = Color(0xFF1A1A1A);
   static const Color _gold = Color(0xFFC9A84C);
-  static const Color _goldSutil = Color(0x33C9A84C); // gold 20% opacidade
+  static const Color _goldSutil = Color(0x33C9A84C);
   static const Color _cream = Color(0xFFF5F0E8);
   static const Color _muted = Color(0xFF8C8C8C);
 
-  // ── InputDecoration reutilizável ─────────────────────────────────────────────
   InputDecoration _inputDecoration({
     required String label,
     required IconData prefixIcon,
@@ -61,7 +59,6 @@ class _TelaLoginState extends State<TelaLogin> {
     );
   }
 
-  // ── Lógica de login (sem alterações) ────────────────────────────────────────
   Future<void> fazerLogin() async {
     if (!formKey.currentState!.validate()) return;
 
@@ -169,7 +166,6 @@ class _TelaLoginState extends State<TelaLogin> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ── Logo ────────────────────────────────────────────────
                     Center(
                       child: Container(
                         width: 72,
@@ -186,25 +182,19 @@ class _TelaLoginState extends State<TelaLogin> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
-                    // ── Título ───────────────────────────────────────────────
                     const Text(
                       'Barbearia',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontFamily:
-                            'PlayfairDisplay', // adicione no pubspec.yaml
+                        fontFamily: 'PlayfairDisplay',
                         fontSize: 28,
                         fontWeight: FontWeight.w600,
                         color: _cream,
                         letterSpacing: 0.5,
                       ),
                     ),
-
                     const SizedBox(height: 4),
-
                     const Text(
                       'BEM-VINDO DE VOLTA',
                       textAlign: TextAlign.center,
@@ -215,10 +205,7 @@ class _TelaLoginState extends State<TelaLogin> {
                         letterSpacing: 2.5,
                       ),
                     ),
-
                     const SizedBox(height: 36),
-
-                    // ── Campo usuário ────────────────────────────────────────
                     TextFormField(
                       controller: usuarioController,
                       style: const TextStyle(color: _cream, fontSize: 15),
@@ -233,10 +220,7 @@ class _TelaLoginState extends State<TelaLogin> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 14),
-
-                    // ── Campo senha ──────────────────────────────────────────
                     TextFormField(
                       controller: senhaController,
                       obscureText: obscureText,
@@ -263,10 +247,7 @@ class _TelaLoginState extends State<TelaLogin> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 28),
-
-                    // ── Botão entrar ─────────────────────────────────────────
                     carregando
                         ? const Center(
                             child: CircularProgressIndicator(color: _gold),
@@ -291,10 +272,7 @@ class _TelaLoginState extends State<TelaLogin> {
                               child: const Text('Entrar'),
                             ),
                           ),
-
                     const SizedBox(height: 16),
-
-                    // ── Link cadastro ────────────────────────────────────────
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).push(
