@@ -313,13 +313,10 @@ class _TelaFuncionarioPrincipalState extends State<TelaFuncionarioPrincipal> {
                 endIndent: 24,
               ),
               ListTile(
-                leading: Icon(Icons.logout, color: Color(0xFFE24B4A), size: 20),
+                leading: Icon(Icons.logout, color: gold, size: 20),
                 title: Text(
                   'Sair da conta',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 14,
-                    color: Color(0xFFE24B4A),
-                  ),
+                  style: GoogleFonts.dmSans(fontSize: 14, color: cream),
                 ),
                 onTap: () async {
                   await Supabase.instance.client.auth.signOut();
