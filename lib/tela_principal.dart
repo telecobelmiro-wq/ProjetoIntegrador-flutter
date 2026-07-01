@@ -59,6 +59,50 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
     carregarAgendamentos();
   }
 
+  Future<void> cancelarAgendamento(dynamic agendamento) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: _bgCard,
+          title: Text(
+            'Cancelar agendamento',
+            style: GoogleFonts.dmSans(
+              color: _cream,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            'Tem certeza que deseja cancelar este agendamento?',
+            style: GoogleFonts.dmSans(color: _muted),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('Voltar', style: GoogleFonts.dmSans(color: _muted)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
+                'Sim, cancelar',
+                style: GoogleFonts.dmSans(color: _gold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar != true) return;
+
+    await Supabase.instance.client
+        .from('agendamento')
+        .delete()
+        .eq('id', agendamento['id']);
+
+    carregarAgendamentos();
+  }
+
   Widget _buildAgendamentoCard(dynamic agendamento) {
     final data = agendamento['data_agendamento']?.toString() ?? '-';
     final horario = agendamento['horario']?.toString() ?? '-';
@@ -129,6 +173,11 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.redAccent, size: 20),
+              tooltip: 'Cancelar',
+              onPressed: () => cancelarAgendamento(agendamento),
             ),
           ],
         ),
