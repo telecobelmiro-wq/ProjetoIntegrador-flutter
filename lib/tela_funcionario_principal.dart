@@ -66,9 +66,21 @@ class _TelaFuncionarioPrincipalState extends State<TelaFuncionarioPrincipal> {
         }
       }
 
+      // filtra só os agendamentos de hoje
+      final hoje = DateTime.now();
+      final agendamentosHoje = dados.where((a) {
+        final dataTexto = a['data_agendamento']?.toString();
+        if (dataTexto == null) return false;
+        final data = DateTime.tryParse(dataTexto);
+        if (data == null) return false;
+        return data.year == hoje.year &&
+            data.month == hoje.month &&
+            data.day == hoje.day;
+      }).toList();
+
       if (!mounted) return;
       setState(() {
-        agendamentos = dados;
+        agendamentos = agendamentosHoje;
         comissao = total;
         carregando = false;
       });

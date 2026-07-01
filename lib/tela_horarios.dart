@@ -213,7 +213,7 @@ class _TelaHorariosState extends State<TelaHorarios> {
         final data = await showDatePicker(
           context: context,
           firstDate: DateTime.now(),
-          lastDate: DateTime(2030),
+          lastDate: DateTime.now().add(Duration(days: 30)),
           initialDate: dataSelecionada ?? DateTime.now(),
           builder: (context, child) {
             return Theme(
