@@ -32,6 +32,38 @@ class _TelaCadastroState extends State<TelaCadastro> {
     super.dispose();
   }
 
+  String? validarUsuario(String? value) {
+    final usuario = value?.trim() ?? '';
+
+    if (usuario.isEmpty) {
+      return 'Informe o usuário';
+    }
+
+    if (usuario.length < 3) {
+      return 'Usuário deve ter pelo menos 3 letras';
+    }
+
+    if (!RegExp(r'^[a-zA-ZÀ-ÿ0-9 ]+$').hasMatch(usuario)) {
+      return 'Use apenas letras e números';
+    }
+
+    return null;
+  }
+
+  String? validarSenha(String? value) {
+    final senha = value?.trim() ?? '';
+
+    if (senha.isEmpty) {
+      return 'Informe a senha';
+    }
+
+    if (senha.length < 6) {
+      return 'Senha deve ter pelo menos 6 caracteres';
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,12 +174,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                           ),
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Campo obrigatório';
-                        }
-                        return null;
-                      },
+                      validator: validarUsuario,
                     ),
                     TextFormField(
                       controller: senhaController,
@@ -201,12 +228,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                           ),
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Campo obrigatório';
-                        }
-                        return null;
-                      },
+                      validator: validarSenha,
                     ),
                     carregando
                         ? Center(child: CircularProgressIndicator(color: gold))
@@ -219,6 +241,35 @@ class _TelaCadastroState extends State<TelaCadastro> {
                                 setState(() => carregando = true);
 
                                 try {
+                                  final usuario = usuarioController.text.trim();
+                                  final usuarioRepetido = await Supabase
+                                      .instance
+                                      .client
+                                      .from('usuario')
+                                      .select('nome')
+                                      .ilike('nome', usuario)
+                                      .limit(1);
+
+                                  if (usuarioRepetido.isNotEmpty) {
+                                    if (!context.mounted) return;
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Este usuário já está cadastrado',
+                                        ),
+                                        backgroundColor: Color(0xFFA32D2D),
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
                                   final senhaLimpa = senhaController.text
                                       .trim();
                                   final bytes = utf8.encode(senhaLimpa);
@@ -229,11 +280,11 @@ class _TelaCadastroState extends State<TelaCadastro> {
                                   await Supabase.instance.client
                                       .from('usuario')
                                       .insert({
-                                        'nome': usuarioController.text.trim(),
+                                        'nome': usuario,
                                         'senha': senhaHash,
                                       });
 
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
 
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -250,7 +301,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
                                   Navigator.pop(context);
                                 } catch (e) {
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text('Erro ao cadastrar: $e'),
@@ -262,8 +313,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
                                     ),
                                   );
                                 } finally {
-                                  if (mounted)
+                                  if (mounted) {
                                     setState(() => carregando = false);
+                                  }
                                 }
                               },
                               style: ElevatedButton.styleFrom(

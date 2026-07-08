@@ -246,6 +246,7 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
   Color cream = Color(0xFFF5F0E8);
   Color muted = Color(0xFF8C8C8C);
 
+  final formKey = GlobalKey<FormState>();
   final dias = [
     'Segunda',
     'Terça',
@@ -268,7 +269,64 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
   }
 
   int? lerHora(String texto) {
-    return int.tryParse(texto.trim().split(':').first);
+    final textoLimpo = texto.trim();
+    final partes = textoLimpo.split(':');
+
+    if (!RegExp(r'^\d{1,2}(:\d{2})?$').hasMatch(textoLimpo)) {
+      return null;
+    }
+
+    final hora = int.tryParse(partes[0]);
+    final minuto = partes.length > 1 ? int.tryParse(partes[1]) : 0;
+
+    if (hora == null || minuto == null) {
+      return null;
+    }
+
+    if (hora < 0 || hora > 23 || minuto < 0 || minuto > 59) {
+      return null;
+    }
+
+    if (minuto != 0) {
+      return null;
+    }
+
+    return hora;
+  }
+
+  String? validarHora(String? value) {
+    final texto = value?.trim() ?? '';
+
+    if (texto.isEmpty) {
+      return 'Informe o horário';
+    }
+
+    if (!RegExp(r'^\d{1,2}(:\d{2})?$').hasMatch(texto)) {
+      return 'Use o formato 09 ou 09:00';
+    }
+
+    if (lerHora(texto) == null) {
+      return 'Use hora cheia entre 0 e 23';
+    }
+
+    return null;
+  }
+
+  String? validarHoraFinal(String? value) {
+    final erro = validarHora(value);
+
+    if (erro != null) {
+      return erro;
+    }
+
+    final inicio = lerHora(inicioController.text);
+    final fim = lerHora(value ?? '');
+
+    if (inicio != null && fim != null && fim <= inicio) {
+      return 'Final deve ser maior que inicial';
+    }
+
+    return null;
   }
 
   InputDecoration inputDecoration(String label, String hint) {
@@ -286,6 +344,14 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: gold, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Color(0xFFE24B4A), width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Color(0xFFE24B4A), width: 1.5),
       ),
       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
@@ -315,183 +381,182 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
       body: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 420),
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(16, 28, 16, 32),
-            children: [
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: bgCard,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: goldSutil, width: 1),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 14,
-                  children: [
-                    Text(
-                      'Informações do horário',
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: cream,
+          child: Form(
+            key: formKey,
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(16, 28, 16, 32),
+              children: [
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: bgCard,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: goldSutil, width: 1),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 14,
+                    children: [
+                      Text(
+                        'Informações do horário',
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: cream,
+                        ),
                       ),
-                    ),
-                    DropdownButtonFormField<String>(
-                      initialValue: diaSelecionado,
-                      dropdownColor: bgCard,
-                      style: GoogleFonts.dmSans(fontSize: 14, color: cream),
-                      iconEnabledColor: gold,
-                      decoration: inputDecoration('Dia da semana', ''),
-                      items: dias
-                          .map(
-                            (dia) =>
-                                DropdownMenuItem(value: dia, child: Text(dia)),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null)
-                          setState(() => diaSelecionado = value);
-                      },
-                    ),
-                    TextFormField(
-                      controller: inicioController,
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.dmSans(fontSize: 14, color: cream),
-                      decoration: inputDecoration(
-                        'Horário inicial',
-                        'Ex: 9 ou 09:00',
-                      ),
-                    ),
-                    TextFormField(
-                      controller: fimController,
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.dmSans(fontSize: 14, color: cream),
-                      decoration: inputDecoration(
-                        'Horário final',
-                        'Ex: 18 ou 18:00',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 24),
-
-              SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: salvando
-                      ? null
-                      : () async {
-                          final inicio = lerHora(inicioController.text);
-                          final fim = lerHora(fimController.text);
-
-                          if (inicio == null || fim == null || inicio >= fim) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Informe um intervalo válido',
-                                  style: GoogleFonts.dmSans(color: cream),
-                                ),
-                                backgroundColor: Color(0xFFE24B4A),
+                      DropdownButtonFormField<String>(
+                        initialValue: diaSelecionado,
+                        dropdownColor: bgCard,
+                        style: GoogleFonts.dmSans(fontSize: 14, color: cream),
+                        iconEnabledColor: gold,
+                        decoration: inputDecoration('Dia da semana', ''),
+                        items: dias
+                            .map(
+                              (dia) => DropdownMenuItem(
+                                value: dia,
+                                child: Text(dia),
                               ),
-                            );
-                            return;
-                          }
-
-                          setState(() => salvando = true);
-
-                          try {
-                            await Supabase.instance.client
-                                .from('horarios_profissionais')
-                                .insert({
-                                  'profissional_id': widget.profissionalId,
-                                  'dia_semana': diaSelecionado,
-                                  'descricao': diaSelecionado,
-                                  'horario_inicio': inicio,
-                                  'horario_fim': fim,
-                                });
-
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Horário cadastrado',
-                                  style: GoogleFonts.dmSans(color: bgBase),
-                                ),
-                                backgroundColor: Color(0xFF639922),
-                              ),
-                            );
-                            Navigator.of(context).pop();
-                          } catch (e) {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Erro ao salvar horário: $e',
-                                  style: GoogleFonts.dmSans(color: cream),
-                                ),
-                                backgroundColor: Color(0xFFE24B4A),
-                              ),
-                            );
-                          } finally {
-                            if (mounted) setState(() => salvando = false);
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => diaSelecionado = value);
                           }
                         },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: gold,
-                    foregroundColor: bgBase,
-                    disabledBackgroundColor: goldSutil,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: salvando
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFF111111),
-                          ),
-                        )
-                      : Text(
-                          'Salvar horário',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        validator: (value) =>
+                            value == null ? 'Escolha o dia' : null,
+                      ),
+                      TextFormField(
+                        controller: inicioController,
+                        keyboardType: TextInputType.datetime,
+                        style: GoogleFonts.dmSans(fontSize: 14, color: cream),
+                        decoration: inputDecoration(
+                          'Horário inicial',
+                          'Ex: 9 ou 09:00',
                         ),
-                ),
-              ),
-
-              SizedBox(height: 12),
-
-              SizedBox(
-                height: 50,
-                child: OutlinedButton(
-                  onPressed: salvando
-                      ? null
-                      : () => Navigator.of(context).pop(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: gold,
-                    side: BorderSide(color: Color(0x33C9A84C), width: 1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Cancelar',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                        validator: validarHora,
+                      ),
+                      TextFormField(
+                        controller: fimController,
+                        keyboardType: TextInputType.datetime,
+                        style: GoogleFonts.dmSans(fontSize: 14, color: cream),
+                        decoration: inputDecoration(
+                          'Horário final',
+                          'Ex: 18 ou 18:00',
+                        ),
+                        validator: validarHoraFinal,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+
+                SizedBox(height: 24),
+
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: salvando
+                        ? null
+                        : () async {
+                            if (!formKey.currentState!.validate()) return;
+
+                            final inicio = lerHora(inicioController.text)!;
+                            final fim = lerHora(fimController.text)!;
+
+                            setState(() => salvando = true);
+
+                            try {
+                              await Supabase.instance.client
+                                  .from('horarios_profissionais')
+                                  .insert({
+                                    'profissional_id': widget.profissionalId,
+                                    'dia_semana': diaSelecionado,
+                                    'descricao': diaSelecionado,
+                                    'horario_inicio': inicio,
+                                    'horario_fim': fim,
+                                  });
+
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Horário cadastrado',
+                                    style: GoogleFonts.dmSans(color: bgBase),
+                                  ),
+                                  backgroundColor: Color(0xFF639922),
+                                ),
+                              );
+                              Navigator.of(context).pop();
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Erro ao salvar horário: $e',
+                                    style: GoogleFonts.dmSans(color: cream),
+                                  ),
+                                  backgroundColor: Color(0xFFE24B4A),
+                                ),
+                              );
+                            } finally {
+                              if (mounted) setState(() => salvando = false);
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: gold,
+                      foregroundColor: bgBase,
+                      disabledBackgroundColor: goldSutil,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: salvando
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF111111),
+                            ),
+                          )
+                        : Text(
+                            'Salvar horário',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+
+                SizedBox(height: 12),
+
+                SizedBox(
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: salvando
+                        ? null
+                        : () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: gold,
+                      side: BorderSide(color: Color(0x33C9A84C), width: 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancelar',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -6,7 +6,7 @@ void main() {
     await tester.pumpWidget(const MeuApp());
 
     expect(find.text('Barbearia'), findsOneWidget);
-    expect(find.text('Usuario'), findsOneWidget);
+    expect(find.text('Usuário'), findsOneWidget);
     expect(find.text('Senha'), findsOneWidget);
     expect(find.text('Entrar'), findsOneWidget);
   });

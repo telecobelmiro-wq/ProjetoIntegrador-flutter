@@ -59,6 +59,34 @@ class _TelaLoginState extends State<TelaLogin> {
     );
   }
 
+  String? validarUsuario(String? value) {
+    final usuario = value?.trim() ?? '';
+
+    if (usuario.isEmpty) {
+      return 'Informe o usuário';
+    }
+
+    if (usuario.length < 3) {
+      return 'Usuário deve ter pelo menos 3 letras';
+    }
+
+    if (!RegExp(r'^[a-zA-ZÀ-ÿ0-9 ]+$').hasMatch(usuario)) {
+      return 'Use apenas letras e números';
+    }
+
+    return null;
+  }
+
+  String? validarSenha(String? value) {
+    final senha = value?.trim() ?? '';
+
+    if (senha.isEmpty) {
+      return 'Informe a senha';
+    }
+
+    return null;
+  }
+
   Future<void> fazerLogin() async {
     if (!formKey.currentState!.validate()) return;
 
@@ -213,12 +241,7 @@ class _TelaLoginState extends State<TelaLogin> {
                         label: 'Usuário',
                         prefixIcon: Icons.person_outline,
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Campo obrigatório';
-                        }
-                        return null;
-                      },
+                      validator: validarUsuario,
                     ),
                     const SizedBox(height: 14),
                     TextFormField(
@@ -240,12 +263,7 @@ class _TelaLoginState extends State<TelaLogin> {
                           ),
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Campo obrigatório';
-                        }
-                        return null;
-                      },
+                      validator: validarSenha,
                     ),
                     const SizedBox(height: 28),
                     carregando

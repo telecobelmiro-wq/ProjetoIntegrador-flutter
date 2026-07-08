@@ -252,6 +252,63 @@ class _TelaCadastroServicoState extends State<TelaCadastroServico> {
     );
   }
 
+  String? validarDescricao(String? value) {
+    final texto = value?.trim() ?? '';
+
+    if (texto.isEmpty) {
+      return 'Informe a descrição';
+    }
+
+    if (texto.length < 3) {
+      return 'Descrição muito curta';
+    }
+
+    return null;
+  }
+
+  String? validarDuracao(String? value) {
+    final texto = value?.trim().toLowerCase() ?? '';
+
+    if (texto.isEmpty) {
+      return 'Informe a duração';
+    }
+
+    if (!RegExp(r'^\d{1,3}\s*(min)?$').hasMatch(texto)) {
+      return 'Use exemplo: 30 ou 30 min';
+    }
+
+    final minutos = int.tryParse(RegExp(r'\d+').firstMatch(texto)!.group(0)!);
+
+    if (minutos == null || minutos < 5 || minutos > 480) {
+      return 'Duração deve ser entre 5 e 480 min';
+    }
+
+    return null;
+  }
+
+  String? validarValor(String? value) {
+    final texto = (value ?? '').trim().replaceAll(',', '.');
+    final valor = double.tryParse(texto);
+
+    if (texto.isEmpty) {
+      return 'Informe o valor';
+    }
+
+    if (valor == null) {
+      return 'Informe um valor válido';
+    }
+
+    if (valor <= 0) {
+      return 'Valor deve ser maior que zero';
+    }
+
+    if (valor > 10000) {
+      return 'Valor muito alto';
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -306,9 +363,7 @@ class _TelaCadastroServicoState extends State<TelaCadastroServico> {
                       controller: descricaoController,
                       style: TextStyle(color: cream, fontSize: 15),
                       decoration: inputDeco('Descrição', Icons.edit_outlined),
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Informe a descrição'
-                          : null,
+                      validator: validarDescricao,
                     ),
                     TextFormField(
                       controller: duracaoController,
@@ -317,21 +372,19 @@ class _TelaCadastroServicoState extends State<TelaCadastroServico> {
                         'Duração (ex: 30 min)',
                         Icons.access_time_outlined,
                       ),
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Informe a duração'
-                          : null,
+                      validator: validarDuracao,
                     ),
                     TextFormField(
                       controller: valorController,
-                      keyboardType: TextInputType.number,
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       style: TextStyle(color: cream, fontSize: 15),
                       decoration: inputDeco(
                         'Valor (R\$)',
                         Icons.attach_money_outlined,
                       ),
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Informe o valor'
-                          : null,
+                      validator: validarValor,
                     ),
                     SizedBox(height: 14),
                     SizedBox(
@@ -345,6 +398,13 @@ class _TelaCadastroServicoState extends State<TelaCadastroServico> {
                                 setState(() => salvando = true);
 
                                 try {
+                                  final valor = double.parse(
+                                    valorController.text.trim().replaceAll(
+                                      ',',
+                                      '.',
+                                    ),
+                                  );
+
                                   await Supabase.instance.client
                                       .from('servicos')
                                       .insert({
@@ -353,17 +413,12 @@ class _TelaCadastroServicoState extends State<TelaCadastroServico> {
                                             .trim(),
                                         'duracao': duracaoController.text
                                             .trim(),
-                                        'valor': double.tryParse(
-                                          valorController.text.replaceAll(
-                                            ',',
-                                            '.',
-                                          ),
-                                        ),
+                                        'valor': valor,
                                         'profissional_id':
                                             widget.profissionalId,
                                       });
 
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
@@ -378,7 +433,7 @@ class _TelaCadastroServicoState extends State<TelaCadastroServico> {
                                   );
                                   Navigator.of(context).pop();
                                 } catch (e) {
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(

@@ -41,13 +41,16 @@ class _TelaFuncionarioPrincipalState extends State<TelaFuncionarioPrincipal> {
 
   Future<void> carregarAgendamentos() async {
     try {
-      final dados = await Supabase.instance.client
+      final supabase = Supabase.instance.client;
+
+      final dados = await supabase
           .from('agendamento')
           .select()
           .eq('profissional_id', widget.profissionalId)
-          .order('data_agendamento');
+          .order('data_agendamento')
+          .order('horario');
 
-      final servicos = await Supabase.instance.client
+      final servicos = await supabase
           .from('servicos')
           .select()
           .eq('profissional_id', widget.profissionalId);
@@ -57,30 +60,23 @@ class _TelaFuncionarioPrincipalState extends State<TelaFuncionarioPrincipal> {
       };
 
       var total = 0.0;
+      final listaAgendamentos = [];
+
       for (final agendamento in dados) {
+        listaAgendamentos.add(agendamento);
+
         final status = agendamento['status']?.toString();
         final servico = servicosPorId[agendamento['servico_id']];
+
         if (status == 'Concluido' && servico != null) {
           final valor = double.tryParse(servico['valor'].toString()) ?? 0;
           total += valor * 0.5;
         }
       }
 
-      // filtra só os agendamentos de hoje
-      final hoje = DateTime.now();
-      final agendamentosHoje = dados.where((a) {
-        final dataTexto = a['data_agendamento']?.toString();
-        if (dataTexto == null) return false;
-        final data = DateTime.tryParse(dataTexto);
-        if (data == null) return false;
-        return data.year == hoje.year &&
-            data.month == hoje.month &&
-            data.day == hoje.day;
-      }).toList();
-
       if (!mounted) return;
       setState(() {
-        agendamentos = agendamentosHoje;
+        agendamentos = listaAgendamentos;
         comissao = total;
         carregando = false;
       });
@@ -332,7 +328,7 @@ class _TelaFuncionarioPrincipalState extends State<TelaFuncionarioPrincipal> {
                 ),
                 onTap: () async {
                   await Supabase.instance.client.auth.signOut();
-                  if (!mounted) return;
+                  if (!context.mounted) return;
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => TelaLogin()),
                     (route) => false,
