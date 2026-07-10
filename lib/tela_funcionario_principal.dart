@@ -22,9 +22,14 @@ class TelaFuncionarioPrincipal extends StatefulWidget {
 }
 
 class _TelaFuncionarioPrincipalState extends State<TelaFuncionarioPrincipal> {
+  static const String filtroHoje = 'hoje';
+  static const String filtroConcluidos = 'concluidos';
+  static const String filtroProximos = 'proximos';
+
   List agendamentos = [];
   double comissao = 0;
   bool carregando = true;
+  String filtroSelecionado = filtroHoje;
 
   Color bgBase = Color(0xFF111111);
   Color bgCard = Color(0xFF1A1A1A);
@@ -37,6 +42,34 @@ class _TelaFuncionarioPrincipalState extends State<TelaFuncionarioPrincipal> {
   void initState() {
     super.initState();
     carregarAgendamentos();
+  }
+
+  DateTime? dataDoAgendamento(dynamic agendamento) {
+    final data = DateTime.tryParse(
+      agendamento['data_agendamento']?.toString() ?? '',
+    );
+    return data == null ? null : DateTime(data.year, data.month, data.day);
+  }
+
+  List filtrarAgendamentos(String filtro) {
+    final agora = DateTime.now();
+    final hoje = DateTime(agora.year, agora.month, agora.day);
+
+    return agendamentos.where((agendamento) {
+      final data = dataDoAgendamento(agendamento);
+      final status = agendamento['status']?.toString() ?? '';
+      final estaAberto = status != 'Concluido' && status != 'Cancelado';
+
+      if (filtro == filtroConcluidos) {
+        return status == 'Concluido';
+      }
+
+      if (filtro == filtroProximos) {
+        return data != null && data.isAfter(hoje) && estaAberto;
+      }
+
+      return data != null && data.isAtSameMomentAs(hoje) && estaAberto;
+    }).toList();
   }
 
   Future<void> carregarAgendamentos() async {
@@ -118,6 +151,158 @@ class _TelaFuncionarioPrincipalState extends State<TelaFuncionarioPrincipal> {
           color: cor,
           letterSpacing: 0.4,
         ),
+      ),
+    );
+  }
+
+  Widget buildFiltroButton(String filtro, String label, IconData icon) {
+    final selecionado = filtroSelecionado == filtro;
+    final quantidade = filtrarAgendamentos(filtro).length;
+
+    return GestureDetector(
+      onTap: () => setState(() => filtroSelecionado = filtro),
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 180),
+        height: 74,
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: selecionado ? gold.withValues(alpha: 0.13) : bgCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selecionado ? gold : goldSutil,
+            width: selecionado ? 1.4 : 1,
+          ),
+        ),
+        child: Row(
+          spacing: 10,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selecionado ? gold : goldSutil,
+              ),
+              child: Icon(icon, color: selecionado ? bgBase : gold, size: 18),
+            ),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.dmSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selecionado ? cream : muted,
+                ),
+              ),
+            ),
+            Container(
+              constraints: BoxConstraints(minWidth: 28),
+              height: 28,
+              alignment: Alignment.center,
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: selecionado ? gold : Color(0xFF222222),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: goldSutil, width: 0.5),
+              ),
+              child: Text(
+                '$quantidade',
+                style: GoogleFonts.dmSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: selecionado ? bgBase : gold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildFiltros() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final larguraItem = constraints.maxWidth >= 460
+            ? (constraints.maxWidth - 16) / 3
+            : constraints.maxWidth;
+        final botoes = [
+          buildFiltroButton(filtroHoje, 'Hoje', Icons.today_outlined),
+          buildFiltroButton(
+            filtroConcluidos,
+            'Concluídos',
+            Icons.check_circle_outline,
+          ),
+          buildFiltroButton(
+            filtroProximos,
+            'Próximos dias',
+            Icons.event_note_outlined,
+          ),
+        ];
+
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: botoes
+              .map((botao) => SizedBox(width: larguraItem, child: botao))
+              .toList(),
+        );
+      },
+    );
+  }
+
+  Widget buildCabecalhoLista(String titulo, int quantidade) {
+    final textoQuantidade = quantidade == 1
+        ? '1 serviço'
+        : '$quantidade serviços';
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            titulo,
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: cream,
+            ),
+          ),
+        ),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: goldSutil,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: goldSutil, width: 0.5),
+          ),
+          child: Text(
+            textoQuantidade,
+            style: GoogleFonts.dmSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: gold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildEstadoVazioFiltro(String mensagem, IconData icone) {
+    return Padding(
+      padding: EdgeInsets.only(top: 54),
+      child: Column(
+        spacing: 16,
+        children: [
+          Icon(icone, size: 48, color: muted.withValues(alpha: 0.4)),
+          Text(
+            mensagem,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.dmSans(fontSize: 15, color: muted),
+          ),
+        ],
       ),
     );
   }
@@ -215,6 +400,21 @@ class _TelaFuncionarioPrincipalState extends State<TelaFuncionarioPrincipal> {
 
   @override
   Widget build(BuildContext context) {
+    final agendamentosVisiveis = filtrarAgendamentos(filtroSelecionado);
+    var tituloFiltro = 'Serviços de hoje';
+    var mensagemVazia = 'Nenhum serviço para hoje';
+    var iconeVazio = Icons.today_outlined;
+
+    if (filtroSelecionado == filtroConcluidos) {
+      tituloFiltro = 'Serviços concluídos';
+      mensagemVazia = 'Nenhum serviço concluído ainda';
+      iconeVazio = Icons.check_circle_outline;
+    } else if (filtroSelecionado == filtroProximos) {
+      tituloFiltro = 'Próximos dias';
+      mensagemVazia = 'Nenhum serviço marcado para os próximos dias';
+      iconeVazio = Icons.event_note_outlined;
+    }
+
     return Scaffold(
       backgroundColor: bgBase,
       appBar: AppBar(
@@ -400,29 +600,19 @@ class _TelaFuncionarioPrincipalState extends State<TelaFuncionarioPrincipal> {
                           ],
                         ),
                       ),
-                      if (agendamentos.isEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(top: 60),
-                          child: Column(
-                            spacing: 16,
-                            children: [
-                              Icon(
-                                Icons.event_busy_outlined,
-                                size: 48,
-                                color: muted.withValues(alpha: 0.4),
-                              ),
-                              Text(
-                                'Nenhum atendimento encontrado',
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 15,
-                                  color: muted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
+                      buildFiltros(),
+                      SizedBox(height: 20),
+                      buildCabecalhoLista(
+                        tituloFiltro,
+                        agendamentosVisiveis.length,
+                      ),
+                      SizedBox(height: 12),
+                      if (agendamentosVisiveis.isEmpty)
+                        buildEstadoVazioFiltro(mensagemVazia, iconeVazio)
                       else
-                        ...agendamentos.map((a) => buildAgendamentoCard(a)),
+                        ...agendamentosVisiveis.map(
+                          (a) => buildAgendamentoCard(a),
+                        ),
                     ],
                   ),
                 ),

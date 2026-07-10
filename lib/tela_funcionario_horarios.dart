@@ -61,8 +61,8 @@ class _TelaFuncionarioHorariosState extends State<TelaFuncionarioHorarios> {
 
   Widget buildHorarioCard(dynamic horario) {
     final dia = horario['dia_semana'] ?? horario['descricao'] ?? '-';
-    final inicio = horario['horario_inicio']?.toString() ?? '-';
-    final fim = horario['horario_fim']?.toString() ?? '-';
+    final inicio = formatarHorarioSalvo(horario['horario_inicio']);
+    final fim = formatarHorarioSalvo(horario['horario_fim']);
 
     return Container(
       margin: EdgeInsets.only(bottom: 10),
@@ -116,6 +116,20 @@ class _TelaFuncionarioHorariosState extends State<TelaFuncionarioHorarios> {
         ),
       ),
     );
+  }
+
+  String formatarHorarioSalvo(dynamic valor) {
+    if (valor == null) return '-';
+
+    final texto = valor.toString().trim();
+    if (texto.isEmpty) return '-';
+
+    final partes = texto.split(':');
+    final hora = int.tryParse(partes.first);
+    if (hora == null) return texto;
+
+    final minuto = partes.length > 1 ? int.tryParse(partes[1]) ?? 0 : 0;
+    return '${hora.toString().padLeft(2, '0')}:${minuto.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -256,77 +270,109 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
     'Sábado',
     'Domingo',
   ];
-  final inicioController = TextEditingController();
-  final fimController = TextEditingController();
+  TimeOfDay? horarioInicio;
+  TimeOfDay? horarioFim;
   String diaSelecionado = 'Segunda';
+  String? erroHorario;
   bool salvando = false;
 
-  @override
-  void dispose() {
-    inicioController.dispose();
-    fimController.dispose();
-    super.dispose();
+  String formatarHorario(TimeOfDay horario) {
+    return '${horario.hour.toString().padLeft(2, '0')}:00';
   }
 
-  int? lerHora(String texto) {
-    final textoLimpo = texto.trim();
-    final partes = textoLimpo.split(':');
-
-    if (!RegExp(r'^\d{1,2}(:\d{2})?$').hasMatch(textoLimpo)) {
-      return null;
+  String? validarHorariosSelecionados() {
+    if (horarioInicio == null || horarioFim == null) {
+      return 'Selecione o horário inicial e final';
     }
 
-    final hora = int.tryParse(partes[0]);
-    final minuto = partes.length > 1 ? int.tryParse(partes[1]) : 0;
-
-    if (hora == null || minuto == null) {
-      return null;
-    }
-
-    if (hora < 0 || hora > 23 || minuto < 0 || minuto > 59) {
-      return null;
-    }
-
-    if (minuto != 0) {
-      return null;
-    }
-
-    return hora;
-  }
-
-  String? validarHora(String? value) {
-    final texto = value?.trim() ?? '';
-
-    if (texto.isEmpty) {
-      return 'Informe o horário';
-    }
-
-    if (!RegExp(r'^\d{1,2}(:\d{2})?$').hasMatch(texto)) {
-      return 'Use o formato 09 ou 09:00';
-    }
-
-    if (lerHora(texto) == null) {
-      return 'Use hora cheia entre 0 e 23';
-    }
-
-    return null;
-  }
-
-  String? validarHoraFinal(String? value) {
-    final erro = validarHora(value);
-
-    if (erro != null) {
-      return erro;
-    }
-
-    final inicio = lerHora(inicioController.text);
-    final fim = lerHora(value ?? '');
-
-    if (inicio != null && fim != null && fim <= inicio) {
+    if (horarioFim!.hour <= horarioInicio!.hour) {
       return 'Final deve ser maior que inicial';
     }
 
     return null;
+  }
+
+  Future<void> selecionarHorario({
+    required bool inicial,
+    required String titulo,
+  }) async {
+    final horarioAtual = inicial ? horarioInicio : horarioFim;
+    final horaSelecionada = horarioAtual?.hour;
+
+    final selecionado = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: bgCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: cream,
+                  ),
+                ),
+                SizedBox(height: 16),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  crossAxisCount: 4,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 2.15,
+                  children: List.generate(24, (hora) {
+                    final estaSelecionado = horaSelecionada == hora;
+
+                    return OutlinedButton(
+                      onPressed: () => Navigator.pop(context, hora),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: estaSelecionado
+                            ? gold
+                            : Color(0xFF222222),
+                        foregroundColor: estaSelecionado ? bgBase : cream,
+                        side: BorderSide(
+                          color: estaSelecionado ? gold : goldSutil,
+                          width: estaSelecionado ? 1.4 : 1,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: GoogleFonts.dmSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      child: Text('${hora.toString().padLeft(2, '0')}:00'),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selecionado == null || !mounted) return;
+
+    setState(() {
+      final horario = TimeOfDay(hour: selecionado, minute: 0);
+      if (inicial) {
+        horarioInicio = horario;
+      } else {
+        horarioFim = horario;
+      }
+      erroHorario = null;
+    });
   }
 
   InputDecoration inputDecoration(String label, String hint) {
@@ -354,6 +400,96 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
         borderSide: BorderSide(color: Color(0xFFE24B4A), width: 1.5),
       ),
       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
+  Widget buildHorarioPicker({
+    required String label,
+    required String placeholder,
+    required TimeOfDay? horario,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    final selecionado = horario != null;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF222222),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selecionado ? gold : goldSutil,
+            width: selecionado ? 1.4 : 1,
+          ),
+        ),
+        child: Row(
+          spacing: 12,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selecionado ? goldSutil : bgCard,
+              ),
+              child: Icon(icon, color: gold, size: 18),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 3,
+                children: [
+                  Text(
+                    label,
+                    style: GoogleFonts.dmSans(fontSize: 12, color: muted),
+                  ),
+                  Text(
+                    selecionado ? formatarHorario(horario) : placeholder,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: selecionado ? cream : muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.schedule_outlined, color: selecionado ? gold : muted),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildErroHorario() {
+    final erro = erroHorario;
+    if (erro == null) return SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Color(0x22E24B4A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Color(0xFFE24B4A), width: 0.7),
+      ),
+      child: Row(
+        spacing: 8,
+        children: [
+          Icon(Icons.error_outline, color: Color(0xFFE24B4A), size: 17),
+          Expanded(
+            child: Text(
+              erro,
+              style: GoogleFonts.dmSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFE24B4A),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -427,26 +563,27 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
                         validator: (value) =>
                             value == null ? 'Escolha o dia' : null,
                       ),
-                      TextFormField(
-                        controller: inicioController,
-                        keyboardType: TextInputType.datetime,
-                        style: GoogleFonts.dmSans(fontSize: 14, color: cream),
-                        decoration: inputDecoration(
-                          'Horário inicial',
-                          'Ex: 9 ou 09:00',
+                      buildHorarioPicker(
+                        label: 'Horário inicial',
+                        placeholder: 'Toque para selecionar',
+                        horario: horarioInicio,
+                        icon: Icons.play_circle_outline,
+                        onTap: () => selecionarHorario(
+                          inicial: true,
+                          titulo: 'Horário inicial',
                         ),
-                        validator: validarHora,
                       ),
-                      TextFormField(
-                        controller: fimController,
-                        keyboardType: TextInputType.datetime,
-                        style: GoogleFonts.dmSans(fontSize: 14, color: cream),
-                        decoration: inputDecoration(
-                          'Horário final',
-                          'Ex: 18 ou 18:00',
+                      buildHorarioPicker(
+                        label: 'Horário final',
+                        placeholder: 'Toque para selecionar',
+                        horario: horarioFim,
+                        icon: Icons.stop_circle_outlined,
+                        onTap: () => selecionarHorario(
+                          inicial: false,
+                          titulo: 'Horário final',
                         ),
-                        validator: validarHoraFinal,
                       ),
+                      buildErroHorario(),
                     ],
                   ),
                 ),
@@ -461,8 +598,14 @@ class _TelaCadastroHorarioState extends State<TelaCadastroHorario> {
                         : () async {
                             if (!formKey.currentState!.validate()) return;
 
-                            final inicio = lerHora(inicioController.text)!;
-                            final fim = lerHora(fimController.text)!;
+                            final erro = validarHorariosSelecionados();
+                            if (erro != null) {
+                              setState(() => erroHorario = erro);
+                              return;
+                            }
+
+                            final inicio = horarioInicio!.hour;
+                            final fim = horarioFim!.hour;
 
                             setState(() => salvando = true);
 

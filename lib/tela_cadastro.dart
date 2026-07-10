@@ -242,6 +242,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
                                 try {
                                   final usuario = usuarioController.text.trim();
+
                                   final usuarioRepetido = await Supabase
                                       .instance
                                       .client
@@ -272,6 +273,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
                                   final senhaLimpa = senhaController.text
                                       .trim();
+
                                   final bytes = utf8.encode(senhaLimpa);
                                   final senhaHash = sha256
                                       .convert(bytes)

@@ -210,7 +210,7 @@ class _TelaConfirmacaoState extends State<TelaConfirmacao> {
                                           'status': 'Agendado',
                                         });
 
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -226,7 +226,7 @@ class _TelaConfirmacaoState extends State<TelaConfirmacao> {
                                       context,
                                     ).popUntil((route) => route.isFirst);
                                   } catch (e) {
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -239,8 +239,9 @@ class _TelaConfirmacaoState extends State<TelaConfirmacao> {
                                       ),
                                     );
                                   } finally {
-                                    if (mounted)
+                                    if (mounted) {
                                       setState(() => salvando = false);
+                                    }
                                   }
                                 },
                           style: ElevatedButton.styleFrom(
