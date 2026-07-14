@@ -87,6 +87,36 @@ class _TelaLoginState extends State<TelaLogin> {
     return null;
   }
 
+  void _mostrarEsqueciSenha() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: _bgCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: _goldSutil, width: 1),
+          ),
+          title: const Text(
+            'Esqueci minha senha',
+            style: TextStyle(color: _cream, fontWeight: FontWeight.w600),
+          ),
+          content: const Text(
+            'Contate um administrador.',
+            style: TextStyle(color: _muted),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(foregroundColor: _gold),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> fazerLogin() async {
     if (!formKey.currentState!.validate()) return;
 
@@ -265,7 +295,19 @@ class _TelaLoginState extends State<TelaLogin> {
                       ),
                       validator: validarSenha,
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _mostrarEsqueciSenha,
+                        style: TextButton.styleFrom(
+                          foregroundColor: _muted,
+                          textStyle: const TextStyle(fontSize: 13),
+                        ),
+                        child: const Text('Esqueci minha senha'),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     carregando
                         ? const Center(
                             child: CircularProgressIndicator(color: _gold),
