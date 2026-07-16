@@ -15,6 +15,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final formKey = GlobalKey<FormState>();
   final usuarioController = TextEditingController();
   final senhaController = TextEditingController();
+  final emailController = TextEditingController();
+
   bool carregando = false;
   bool obscureText = true;
 
@@ -28,6 +30,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   @override
   void dispose() {
     usuarioController.dispose();
+    emailController.dispose();
     senhaController.dispose();
     super.dispose();
   }
@@ -45,6 +48,20 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
     if (!RegExp(r'^[a-zA-ZÀ-ÿ0-9 ]+$').hasMatch(usuario)) {
       return 'Use apenas letras e números';
+    }
+
+    return null;
+  }
+
+  String? validarEmail(String? value) {
+    final email = value?.trim() ?? '';
+
+    if (email.isEmpty) {
+      return 'Informe o e-mail';
+    }
+
+    if (!RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      return 'E-mail inválido';
     }
 
     return null;
@@ -176,6 +193,51 @@ class _TelaCadastroState extends State<TelaCadastro> {
                       ),
                       validator: validarUsuario,
                     ),
+
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: TextStyle(color: cream, fontSize: 15),
+                      decoration: InputDecoration(
+                        labelText: 'E-mail',
+                        labelStyle: TextStyle(color: muted, fontSize: 14),
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: gold,
+                          size: 20,
+                        ),
+                        filled: true,
+                        fillColor: bgCard,
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 16,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: goldSutil, width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: gold, width: 1.5),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Color(0xFFE24B4A),
+                            width: 1,
+                          ),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Color(0xFFE24B4A),
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                      validator: validarEmail,
+                    ),
+
                     TextFormField(
                       controller: senhaController,
                       obscureText: obscureText,
@@ -242,6 +304,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
                                 try {
                                   final usuario = usuarioController.text.trim();
+                                  final email = emailController.text
+                                      .trim()
+                                      .toLowerCase();
 
                                   final usuarioRepetido = await Supabase
                                       .instance
@@ -270,6 +335,35 @@ class _TelaCadastroState extends State<TelaCadastro> {
                                     );
                                     return;
                                   }
+                                  final emailRepetido = await Supabase
+                                      .instance
+                                      .client
+                                      .from('usuario')
+                                      .select('email')
+                                      .ilike('email', email)
+                                      .limit(1);
+
+                                  if (emailRepetido.isNotEmpty) {
+                                    if (!context.mounted) return;
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text(
+                                          'Este e-mail já está cadastrado',
+                                        ),
+                                        backgroundColor: const Color(
+                                          0xFFA32D2D,
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
 
                                   final senhaLimpa = senhaController.text
                                       .trim();
@@ -283,6 +377,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                                       .from('usuario')
                                       .insert({
                                         'nome': usuario,
+                                        'email': email,
                                         'senha': senhaHash,
                                       });
 

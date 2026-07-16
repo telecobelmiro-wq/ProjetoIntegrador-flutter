@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tela_cadastro.dart';
 import 'tela_funcionario_principal.dart';
 import 'tela_principal.dart';
+import 'tela_recuperar_senha.dart';
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
@@ -88,32 +89,9 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 
   void _mostrarEsqueciSenha() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: _bgCard,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: const BorderSide(color: _goldSutil, width: 1),
-          ),
-          title: const Text(
-            'Esqueci minha senha',
-            style: TextStyle(color: _cream, fontWeight: FontWeight.w600),
-          ),
-          content: const Text(
-            'Contate um administrador.',
-            style: TextStyle(color: _muted),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(foregroundColor: _gold),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TelaRecuperarSenha()),
     );
   }
 
@@ -123,6 +101,7 @@ class _TelaLoginState extends State<TelaLogin> {
     setState(() => carregando = true);
 
     try {
+      final usuario = usuarioController.text.trim();
       final senhaLimpa = senhaController.text.trim();
       final bytesDaSenha = utf8.encode(senhaLimpa);
       final senhaHash = sha256.convert(bytesDaSenha).toString();
@@ -130,7 +109,7 @@ class _TelaLoginState extends State<TelaLogin> {
       final data = await Supabase.instance.client
           .from('usuario')
           .select()
-          .eq('nome', usuarioController.text.trim())
+          .ilike('nome', usuario)
           .eq('senha', senhaHash)
           .maybeSingle();
 
